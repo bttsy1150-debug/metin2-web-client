@@ -55,8 +55,8 @@ function animate() {
     const speed = 0.1;
     if (keys.w) player.position.z += speed;
     if (keys.s) player.position.z -= speed;
-    if (keys.a) player.position.x -= speed;
-    if (keys.d) player.position.x += speed;
+    if (keys.a) player.position.x += speed;
+    if (keys.d) player.position.x -= speed;
 
     camera.position.set(player.position.x, player.position.y + 4, player.position.z + 8);
     camera.lookAt(player.position);
