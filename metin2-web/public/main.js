@@ -20,7 +20,7 @@ const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-// Grid (Hareketi gözle net görmek için yere çizgiler ekliyoruz)
+// Grid (Çizgiler)
 const grid = new THREE.GridHelper(100, 50, 0x000000, 0x444444);
 grid.position.y = 0.01;
 scene.add(grid);
@@ -32,45 +32,81 @@ const player = new THREE.Mesh(playerGeo, playerMat);
 player.position.set(0, 0.75, 0);
 scene.add(player);
 
-// 3D Hayvan / Canavar (Kırmızı Küp - Haritada Sabit)
-const monsterGeo = new THREE.BoxGeometry(1, 1, 1);
-const monsterMat = new THREE.MeshPhongMaterial({ color: 0x8b0000 });
-const monster = new THREE.Mesh(monsterGeo, monsterMat);
-monster.position.set(0, 0.5, -10); // Tam karşıda sabit bekliyor
-scene.add(monster);
+// --- ÇOKLU CANAVAR SİSTEMİ ---
+const monsters = [];
+const maxMonsters = 5;
+
+// Canavar Oluşturma Fonksiyonu
+function spawnMonster(id, x, z) {
+    const monsterGeo = new THREE.BoxGeometry(1, 1, 1);
+    const monsterMat = new THREE.MeshPhongMaterial({ color: 0x8b0000 });
+    const monster = new THREE.Mesh(monsterGeo, monsterMat);
+    
+    monster.position.set(x, 0.5, z);
+    monster.userData = { id: id, health: 100, startX: x, startZ: z, isDead: false };
+    
+    scene.add(monster);
+    monsters.push(monster);
+}
+
+// İlk Başlangıçta 5 Tane Canavarı Farklı Koordinatlara Dağıt
+spawnMonster(1, 0, -10);
+spawnMonster(2, -8, -15);
+spawnMonster(3, 8, -12);
+spawnMonster(4, -12, -8);
+spawnMonster(5, 10, -20);
 
 // Klavye Kontrolleri
 const keys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if(keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if(keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = false; });
 
-// Saldırı Mekaniği (Sol Tık ile Hayvana Vurma)
-let monsterHealth = 100;
+// Saldırı Mekaniği (En Yakındaki Canavara Vurma)
 window.addEventListener('click', () => {
-    const distance = player.position.distanceTo(monster.position);
-    if (distance < 2.5 && monsterHealth > 0) {
-        monsterHealth -= 25;
-        monster.material.color.setHex(0xffffff); // Vurulduğunda beyaz flaş efekti
-        setTimeout(() => monster.material.color.setHex(0x8b0000), 100);
-        if (monsterHealth <= 0) {
-            scene.remove(monster); // Öldüğünde haritadan sil
-            document.getElementById('ui-overlay').innerText = "Tebrikler! Hayvanı kestiniz.";
+    monsters.forEach((monster) => {
+        if (monster.userData.isDead) return; // Ölü canavara vurma
+
+        const distance = player.position.distanceTo(monster.position);
+        
+        // Eğer canavara yakınsak vur
+        if (distance < 2.5) {
+            monster.userData.health -= 25;
+            monster.material.color.setHex(0xffffff); // Vurulduğunda beyaz flaş efekti
+            setTimeout(() => { if(!monster.userData.isDead) monster.material.color.setHex(0x8b0000); }, 100);
+            
+            document.getElementById('ui-overlay').innerText = `Canavara Vurdun! Kalan Can: %${monster.userData.health}`;
+
+            if (monster.userData.health <= 0) {
+                monster.userData.isDead = true;
+                scene.remove(monster); // Haritadan kaldır
+                document.getElementById('ui-overlay').innerText = "Canavar kesildi! 5 saniye sonra yeniden doğacak.";
+                
+                // 5 Saniye Sonra Yeniden Doğma Mantığı (RESPAWN)
+                setTimeout(() => {
+                    monster.userData.health = 100;
+                    monster.userData.isDead = false;
+                    monster.position.set(monster.userData.startX, 0.5, monster.userData.startZ);
+                    monster.material.color.setHex(0x8b0000);
+                    scene.add(monster);
+                    document.getElementById('ui-overlay').innerText = "Yönlendirme: WASD ile hareket et | Sol Tık: Hayvana Saldır";
+                }, 5000);
+            }
         }
-    }
+    });
 });
 
 // Oyun Döngüsü (Render Loop)
 function animate() {
     requestAnimationFrame(animate);
 
-    // Oyuncu Hareketi (Düzeltilmiş Gerçekçi WASD Yönleri)
+    // Oyuncu Hareketi
     const speed = 0.1;
-    if (keys.w) player.position.z -= speed; // W tuşu ileri (Kırmızı küpe doğru) götürür
-    if (keys.s) player.position.z += speed; // S tuşu geriye çeker
-    if (keys.a) player.position.x -= speed; // A tuşu sola kaydırır
-    if (keys.d) player.position.x += speed; // D tuşu sağa kaydırır
+    if (keys.w) player.position.z -= speed;
+    if (keys.s) player.position.z += speed;
+    if (keys.a) player.position.x -= speed;
+    if (keys.d) player.position.x += speed;
 
-    // Sabit Kamera Takibi (Kamera havada sabit durur, oyuncuyu izler)
+    // Sabit Kamera Takibi
     camera.position.set(player.position.x, player.position.y + 6, player.position.z + 10);
     camera.lookAt(player.position);
 
