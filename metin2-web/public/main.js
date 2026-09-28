@@ -34,7 +34,6 @@ scene.add(player);
 
 // --- ÇOKLU CANAVAR SİSTEMİ ---
 const monsters = [];
-const maxMonsters = 5;
 
 // Canavar Oluşturma Fonksiyonu
 function spawnMonster(id, x, z) {
@@ -43,13 +42,14 @@ function spawnMonster(id, x, z) {
     const monster = new THREE.Mesh(monsterGeo, monsterMat);
     
     monster.position.set(x, 0.5, z);
-    monster.userData = { id: id, health: 100, startX: x, startZ: z, isDead: false };
+    // isAngry: Vurulduğunda true olacak ve oyuncuyu takip edecek
+    monster.userData = { id: id, health: 100, startX: x, startZ: z, isDead: false, isAngry: false };
     
     scene.add(monster);
     monsters.push(monster);
 }
 
-// İlk Başlangıçta 5 Tane Canavarı Farklı Koordinatlara Dağıt
+// 5 Canavarı Farklı Koordinatlara Dağıt
 spawnMonster(1, 0, -10);
 spawnMonster(2, -8, -15);
 spawnMonster(3, 8, -12);
@@ -61,30 +61,32 @@ const keys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if(keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if(keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = false; });
 
-// Saldırı Mekaniği (En Yakındaki Canavara Vurma)
+// Saldırı Mekaniği
 window.addEventListener('click', () => {
     monsters.forEach((monster) => {
-        if (monster.userData.isDead) return; // Ölü canavara vurma
+        if (monster.userData.isDead) return;
 
         const distance = player.position.distanceTo(monster.position);
         
-        // Eğer canavara yakınsak vur
         if (distance < 2.5) {
             monster.userData.health -= 25;
-            monster.material.color.setHex(0xffffff); // Vurulduğunda beyaz flaş efekti
-            setTimeout(() => { if(!monster.userData.isDead) monster.material.color.setHex(0x8b0000); }, 100);
+            monster.userData.isAngry = true; // CANAVAR SİNİRLENDİ (TAKİP BAŞLIYOR)
+            monster.material.color.setHex(0xffffff); // Vurulma efekti
+            setTimeout(() => { if(!monster.userData.isDead) monster.material.color.setHex(0xff0000); }, 100); // Sinirlenince rengini tam kırmızı yap
             
-            document.getElementById('ui-overlay').innerText = `Canavara Vurdun! Kalan Can: %${monster.userData.health}`;
+            document.getElementById('ui-overlay').innerText = `Canavara Vurdun! Canı: %${monster.userData.health} - Seni Takip Ediyor!`;
 
             if (monster.userData.health <= 0) {
                 monster.userData.isDead = true;
-                scene.remove(monster); // Haritadan kaldır
-                document.getElementById('ui-overlay').innerText = "Canavar kesildi! 5 saniye sonra yeniden doğacak.";
+                monster.userData.isAngry = false;
+                scene.remove(monster);
+                document.getElementById('ui-overlay').innerText = "Canavar kesildi! 5 saniye sonra yerinde yeniden doğacak.";
                 
-                // 5 Saniye Sonra Yeniden Doğma Mantığı (RESPAWN)
+                // RESPAWN
                 setTimeout(() => {
                     monster.userData.health = 100;
                     monster.userData.isDead = false;
+                    monster.userData.isAngry = false;
                     monster.position.set(monster.userData.startX, 0.5, monster.userData.startZ);
                     monster.material.color.setHex(0x8b0000);
                     scene.add(monster);
@@ -105,6 +107,25 @@ function animate() {
     if (keys.s) player.position.z += speed;
     if (keys.a) player.position.x -= speed;
     if (keys.d) player.position.x += speed;
+
+    // --- YAPAY ZEKA: SİNİRLENEN CANAVARLARIN OYUNCUYA KOŞMASI ---
+    monsters.forEach((monster) => {
+        if (!monster.userData.isDead && monster.userData.isAngry) {
+            // Oyuncu ile canavar arasındaki yönü hesapla
+            const dir = new THREE.Vector3();
+            dir.subVectors(player.position, monster.position).normalize();
+            
+            // Eğer canavar oyuncuya çok çok yakın değilse üstüne doğru yürüt
+            const dist = monster.position.distanceTo(player.position);
+            if (dist > 1.2) {
+                const monsterSpeed = 0.04; // Canavarın size koşma hızı
+                monster.position.x += dir.x * monsterSpeed;
+                monster.position.z += dir.z * monsterSpeed;
+            } else {
+                document.getElementById('ui-overlay').innerText = "Canavar size vuruyor! Dikkat edin!";
+            }
+        }
+    });
 
     // Sabit Kamera Takibi
     camera.position.set(player.position.x, player.position.y + 6, player.position.z + 10);
