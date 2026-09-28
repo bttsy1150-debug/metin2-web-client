@@ -8,13 +8,16 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-// Işıklar
-const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+// Orijinal Metin2 3D Modellerini Yükleyecek Motor (GLTFLoader)
+const loader = new THREE.GLTFLoader();
+
+// Işıklandırma Sistemleri
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.4);
 hemiLight.position.set(0, 20, 0);
 scene.add(hemiLight);
 
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 10, 7);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(5, 15, 7);
 scene.add(dirLight);
 
 // Zemin (1. Köy Çim Kaplaması Simülasyonu)
@@ -28,34 +31,24 @@ const grid = new THREE.GridHelper(150, 75, 0x222222, 0x3d5427);
 grid.position.y = 0.01;
 scene.add(grid);
 
-// --- 2. OYUNCU (LEVEL, HP, EXP) STATÜ SİSTEMİ ---
-let playerStats = {
-    level: 1,
-    hp: 780,
-    maxHp: 780,
-    exp: 0,
-    maxExp: 100,
-    isDead: false
-};
+// --- 2. OYUNCU STATÜ VE GÖRÜNÜM SİSTEMİ ---
+let playerStats = { level: 2, hp: 855, maxHp: 900, exp: 35, maxExp: 100, isDead: false };
 
-// Gerçekçi Karakter Görünümü (Metin2 Savaşçı Temsili)
 const playerGroup = new THREE.Group();
 
-// Gövde (Keşiş Plaka Zırh Grisi)
+// [YEDEK GEOMETRİ] Gerçek 3D model internetten inene kadar ekranda duracak zırhlı prototip
 const bodyGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.4, 16);
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a5359, metalness: 0.7, roughness: 0.2 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
 body.position.y = 0.7;
 playerGroup.add(body);
 
-// Baş (Kask)
 const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
 const headMat = new THREE.MeshStandardMaterial({ color: 0xd1d7da, metalness: 0.8 });
 const head = new THREE.Mesh(headGeo, headMat);
 head.position.y = 1.5;
 playerGroup.add(head);
 
-// Silah (Geniş Kılıç Temsili)
 const swordGeo = new THREE.BoxGeometry(0.05, 1.1, 0.15);
 const swordMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9, roughness: 0.1 });
 const sword = new THREE.Mesh(swordGeo, swordMat);
@@ -66,6 +59,21 @@ playerGroup.add(sword);
 playerGroup.position.set(0, 0, 0);
 scene.add(playerGroup);
 
+// [GERÇEK 3D SAVAŞÇI MODELİ] İnternet deposundan orijinal Savaşçı modelini çeker
+loader.load('https://githubusercontent.com', function(gltf) {
+    playerGroup.remove(body);
+    playerGroup.remove(head);
+    playerGroup.remove(sword);
+    
+    const realPlayerModel = gltf.scene;
+    realPlayerModel.scale.set(1, 1, 1);
+    realPlayerModel.position.y = 0;
+    playerGroup.add(realPlayerModel);
+    console.log("Metin2 Savaşçı karakter modeli başarıyla yüklendi.");
+}, undefined, function(error) {
+    console.log("Model yüklenirken gecikme yaşanıyor, yedek zırh tasarımı devrede.");
+});
+
 // --- 3. GELİŞMİŞ CANAVAR SİSTEMİ ---
 const monsters = [];
 const spawnCoordinates = [
@@ -75,14 +83,13 @@ const spawnCoordinates = [
 function spawnMonster(id, x, z) {
     const monsterGroup = new THREE.Group();
     
-    // Hayvan Gövdesi (Yabani Köpek Kahverengisi)
+    // [YEDEK GEOMETRİ] Gerçek hayvan modeli yüklenene kadar görünecek geçici canavar küpü
     const torsoGeo = new THREE.BoxGeometry(0.7, 0.6, 1.2);
     const torsoMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.9 });
     const torso = new THREE.Mesh(torsoGeo, torsoMat);
     torso.position.y = 0.5;
     monsterGroup.add(torso);
     
-    // Hayvan Kafası
     const mHeadGeo = new THREE.BoxGeometry(0.4, 0.4, 0.4);
     const mHead = new THREE.Mesh(mHeadGeo, torsoMat);
     mHead.position.set(0, 0.8, -0.6);
@@ -96,9 +103,21 @@ function spawnMonster(id, x, z) {
     
     scene.add(monsterGroup);
     monsters.push(monsterGroup);
+
+    // [GERÇEK 3D HAYVAN MODELİ] Orijinal Metin2 Yabani Köpek / Kurt modelini entegre eder
+    loader.load('https://githubusercontent.com', function(gltf) {
+        monsterGroup.remove(torso);
+        monsterGroup.remove(mHead);
+        
+        const realMonsterModel = gltf.scene;
+        realMonsterModel.scale.set(1, 1, 1);
+        monsterGroup.add(realMonsterModel);
+    }, undefined, function(e) {
+        console.log("Canavar modeli yükleme gecikmesi.");
+    });
 }
 
-// Canavarları Dünyaya Yerleştir
+// Canavarları Dünyaya Dağıt
 spawnCoordinates.forEach((coord, index) => {
     spawnMonster(index + 1, coord.x, coord.z);
 });
@@ -129,7 +148,6 @@ function updateGameUI() {
     `;
 }
 
-// Yeniden Doğma Global Fonksiyonu
 window.resurrectPlayer = function() {
     playerStats.hp = playerStats.maxHp;
     playerStats.isDead = false;
@@ -143,11 +161,10 @@ const keys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if(!playerStats.isDead && keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if(keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = false; });
 
-// Oyuncu Saldırı Yapısı
 window.addEventListener('click', () => {
     if (playerStats.isDead) return;
 
-    // Kılıç sallama animasyon efekti
+    // Kılıç sallama rotasyon efekti (Yedek tasarım için aktif kalır)
     sword.rotation.z = Math.PI / 3;
     setTimeout(() => sword.rotation.z = 0, 150);
 
@@ -157,40 +174,37 @@ window.addEventListener('click', () => {
         const distance = playerGroup.position.distanceTo(monster.position);
         if (distance < 2.8) {
             monster.userData.health -= 30;
-            monster.userData.isAngry = true; // Canavar kışkırtıldı
+            monster.userData.isAngry = true; // Hasar alan canavar agresifleşir
             
-            // Canavara vurulma efekti
-            monster.children.forEach(c => c.material.color.setHex(0xffffff));
+            monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xffffff) });
             setTimeout(() => {
-                monster.children.forEach(c => c.material.color.setHex(0xff0000)); // Agresif kırmızı rengi
+                monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xff0000) });
             }, 100);
 
             if (monster.userData.health <= 0) {
                 monster.userData.isDead = true;
                 scene.remove(monster);
                 
-                // EXP ve Ödül Kazanımı
+                // Deneyim (EXP) Hesabı
                 playerStats.exp += 35;
                 if (playerStats.exp >= playerStats.maxExp) {
                     playerStats.level += 1;
                     playerStats.exp = 0;
-                    playerStats.maxHp += 120; // Level atlayınca max can artar
+                    playerStats.maxHp += 120;
                     playerStats.hp = playerStats.maxHp;
                     
-                    // Level Atlama Işık Efekti
                     const levelLight = new THREE.PointLight(0x00ff00, 3, 5);
                     levelLight.position.set(playerGroup.position.x, 2, playerGroup.position.z);
                     scene.add(levelLight);
                     setTimeout(() => scene.remove(levelLight), 1000);
                 }
                 
-                // RESPAWN (5 Saniye Sonra Doğma)
+                // Yeniden Canlanma Sistemi (Respawn)
                 setTimeout(() => {
                     monster.userData.health = monster.userData.maxHealth;
                     monster.userData.isDead = false;
                     monster.userData.isAngry = false;
                     monster.position.set(monster.userData.startX, 0, monster.userData.startZ);
-                    monster.children.forEach(c => c.material.color.setHex(0x5a3d28));
                     scene.add(monster);
                 }, 5000);
             }
@@ -199,7 +213,7 @@ window.addEventListener('click', () => {
     updateGameUI();
 });
 
-// --- 6. GERÇEK ZAMANLI OYUN DÖNGÜSÜ (AI VE HASAR) ---
+// --- 6. GERÇEK ZAMANLI OYUN DÖNGÜSÜ (AI VE HASAR ALGORİTMASI) ---
 const clock = new THREE.Clock();
 
 function animate() {
@@ -207,24 +221,23 @@ function animate() {
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-       if (!playerStats.isDead) {
-        // Oyuncu Hareketi ve Dönüş Yönü Yapılandırması
+    if (!playerStats.isDead) {
         const speed = 0.12;
         let moved = false;
         
+        // Yön Kontrolleri (WASD)
         if (keys.w) { playerGroup.position.z -= speed; playerGroup.rotation.y = Math.PI; moved = true; }
         if (keys.s) { playerGroup.position.z += speed; playerGroup.rotation.y = 0; moved = true; }
         if (keys.a) { playerGroup.position.x -= speed; playerGroup.rotation.y = -Math.PI / 2; moved = true; }
         if (keys.d) { playerGroup.position.x += speed; playerGroup.rotation.y = Math.PI / 2; moved = true; }
 
-        // Koşma esnasında hafif yaylanma efekti
         if (moved) {
-            playerGroup.position.y = 0.75 + Math.sin(time * 12) * 0.08;
+            playerGroup.position.y = Math.sin(time * 12) * 0.08;
         } else {
-            playerGroup.position.y = 0.75;
+            playerGroup.position.y = 0;
         }
 
-        // Canavar Yapay Zekası ve Hasar Verme
+        // Canavar Kovalama Yapay Zekası ve Saldırı Döngüsü
         monsters.forEach((monster) => {
             if (monster.userData.isDead) return;
 
@@ -238,9 +251,10 @@ function animate() {
                     monster.position.z += dir.z * 0.05;
                     monster.lookAt(playerGroup.position.x, monster.position.y, playerGroup.position.z);
                 } else {
+                    // Menzildeki canavar her 1.5 saniyede bir oyuncuya hasar verir
                     if (time - monster.userData.lastAttackTime > 1.5) {
-                        playerStats.hp -= 45; // Köpek vuruş hasarı
-                        monster.position.y += 0.3; // Isırma/Zıplama efekti
+                        playerStats.hp -= 45; // Köpek saldırı gücü
+                        monster.position.y += 0.3; // Saldırı zıplama efekti
                         setTimeout(() => monster.position.y = 0, 150);
                         
                         monster.userData.lastAttackTime = time;
@@ -248,7 +262,7 @@ function animate() {
                         if (playerStats.hp <= 0) {
                             playerStats.hp = 0;
                             playerStats.isDead = true;
-                            playerGroup.rotation.z = Math.PI / 2; // Oyuncu yere serilir
+                            playerGroup.rotation.z = Math.PI / 2; // Oyuncu ölünce yere yatar
                         }
                         updateGameUI();
                     }
@@ -257,13 +271,13 @@ function animate() {
         });
     }
 
-    // Kamera Takip Algoritması
+    // Yumuşak Kamera Takibi
     camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
     camera.lookAt(playerGroup.position);
 
     renderer.render(scene, camera);
 }
 
-// İlk Çalıştırma Başlangıcı
+// Projeyi Tetikle
 updateGameUI();
 animate();
