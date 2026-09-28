@@ -1,32 +1,150 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Metin2 Tarayıcı Sürümü</title>
-    <style>
-        body { margin: 0; background-color: #222; color: white; font-family: sans-serif; overflow: hidden; }
-        #game-map { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 500px; height: 400px; background-color: #3d5427; 
-            border: 3px solid #555; position: relative; border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        .entity { position: absolute; padding: 5px 10px; font-weight: bold; border-radius: 4px; font-size: 12px; text-shadow: 1px 1px 1px #000; transition: all 0.05s linear; }
-        #player { background-color: #0000ff; border: 2px solid #fff; z-index: 10; }
-        .monster { background-color: #8b0000; border: 2px solid #ff0000; }
-        #ui-overlay { 
-            position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.85); 
-            padding: 15px; border-radius: 8px; border: 2px solid #555; width: 260px;
-        }
-    </style>
-</head>
-<body>
-    <!-- Gerçek görsel harita alanı -->
-    <div id="game-map">
-        [Savaşçı]</div>
-    </div>
+// --- OYUNCU STATÜLERİ VE KONUMU ---
+let playerStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100 };
+let playerPos = { x: 220, y: 180 }; // Haritanın tam ortası
 
-    <div id="ui-overlay">Yükleniyor...</div>
-    <script src="main.js"></script>
-</body>
-</html>
+// --- CANAVARLARIN LİSTESİ VE KONUMLARI ---
+let monsters = [
+    { id: 1, name: "Yabani Köpek", x: 50, y: 50, hp: 90, isDead: false },
+    { id: 2, name: "Yabani Köpek", x: 380, y: 60, hp: 90, isDead: false },
+    { id: 3, name: "Aç Yabani Köpek", x: 100, y: 300, hp: 120, isDead: false },
+    { id: 4, name: "Kurt", x: 400, y: 280, hp: 150, isDead: false },
+    { id: 5, name: "Aç Kurt", x: 300, y: 100, hp: 150, isDead: false }
+];
+
+const mapElement = document.getElementById('game-map');
+const playerElement = document.getElementById('player');
+
+// Canavarları Haritaya Görsel Olarak Çizen Motor
+function drawMonsters() {
+    // Eski canavar görsellerini temizle
+    document.querySelectorAll('.monster').forEach(el => el.remove());
+
+    monsters.forEach(monster => {
+        if (monster.isDead) return;
+        
+        const mEl = document.createElement('div');
+        mEl.className = 'entity monster';
+        mEl.id = `monster-${monster.id}`;
+        mEl.innerText = `[${monster.name}]`;
+        mEl.style.left = monster.x + 'px';
+        mEl.style.top = monster.y + 'px';
+        mapElement.appendChild(mEl);
+    });
+}
+
+// Oyuncunun Ekrandaki Konumunu Güncelleyen Motor
+function updatePlayerPosition() {
+    playerElement.style.left = playerPos.x + 'px';
+    playerElement.style.top = playerPos.y + 'px';
+}
+
+// Arayüzü (HP ve EXP Barlarını) Güncelleyen Motor
+function updateUI() {
+    let ui = document.getElementById('ui-overlay');
+    if (!ui) return;
+    
+    let expPercent = (playerStats.exp / playerStats.maxExp) * 100;
+    ui.innerHTML = `
+        <div style="font-size:15px; font-weight:bold; color:#ffdd00; margin-bottom:5px;">Metin2 2D Server [Lv. ${playerStats.level}]</div>
+        <div style="width: 100%; background: #444; border: 1px solid #000; padding:2px; margin-bottom:5px; border-radius:3px;">
+            <div style="width: ${(playerStats.hp / playerStats.maxHp) * 100}%; background: red; height: 12px; text-align:center; font-size:10px; line-height:12px; font-weight:bold;">HP: ${playerStats.hp}/${playerStats.maxHp}</div>
+        </div>
+        <div style="width: 100%; background: #444; border: 1px solid #000; padding:2px; margin-bottom:10px; border-radius:3px;">
+            <div style="width: ${expPercent}%; background: #00ffcc; height: 12px; text-align:center; font-size:10px; line-height:12px; color:#000; font-weight:bold;">EXP: %${expPercent.toFixed(0)}</div>
+        </div>
+        <div style="font-size:11px; color:#aaa; line-height:14px; text-align:center;">
+            <b>WASD:</b> Haritada Yürü<br>
+            <b>Boşluk (Space):</b> Yakındaki Hayvana Vur!
+        </div>
+    `;
+}
+
+// Klavye Hareket Dinamikleri
+const keys = { w: false, a: false, s: false, d: false };
+window.addEventListener('keydown', (e) => { if (keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', (e) => { if (keys[e.key.toLowerCase()] !== undefined) keys[e.key.toLowerCase()] = false; });
+
+// Boşluk Tuşu ile Yakındaki Hayvana Vurma (Saldırı Mekaniği)
+window.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.code === 'Space') {
+        monsters.forEach(monster => {
+            if (monster.isDead) return;
+
+            // Karakter ile canavar arasındaki mesafeyi hesapla
+            let distX = Math.abs(playerPos.x - monster.x);
+            let distY = Math.abs(playerPos.y - monster.y);
+
+            // Eğer hayvana yeterince yakınsak hasar ver
+            if (distX < 45 && distY < 45) {
+                monster.hp -= 30;
+                
+                // Canavara vurulma efekti (Beyaz flaş)
+                const mEl = document.getElementById(`monster-${monster.id}`);
+                if (mEl) {
+                    mEl.style.backgroundColor = '#fff';
+                    setTimeout(() => { if (mEl) mEl.style.backgroundColor = '#8b0000'; }, 100);
+                }
+
+                if (monster.hp <= 0) {
+                    monster.isDead = true;
+                    playerStats.exp += 35;
+                    if (playerStats.exp >= playerStats.maxExp) {
+                        playerStats.level++;
+                        playerStats.exp = 0;
+                        playerStats.maxHp += 100;
+                        playerStats.hp = playerStats.maxHp;
+                    }
+                    drawMonsters();
+                }
+            }
+        });
+        updateUI();
+    }
+});
+
+// Sürekli Çalışan Oyun Döngüsü
+function gameLoop() {
+    const speed = 4;
+    if (keys.w && playerPos.y > 0) playerPos.y -= speed;
+    if (keys.s && playerPos.y < 370) playerPos.y += speed;
+    if (keys.a && playerPos.x > 0) playerPos.x -= speed;
+    if (keys.d && playerPos.x < 420) playerPos.x += speed;
+
+    // Canavarların Yapay Zekası: Mavi Savaşçıya doğru adım adım yürürler
+    monsters.forEach(monster => {
+        if (monster.isDead) return;
+
+        let distX = playerPos.x - monster.x;
+        let distY = playerPos.y - monster.y;
+        let distance = THREE ? 50 : 45; // Mesafe eşiği
+
+        // Eğer oyuncu canavara çok yakınsa canavar saldırmaya başlar
+        if (Math.abs(distX) < 150 && Math.abs(distY) < 150) {
+            if (monster.x < playerPos.x) monster.x += 1;
+            else monster.x -= 1;
+
+            if (monster.y < playerPos.y) monster.y += 1;
+            else monster.y -= 1;
+            
+            // Çok yakındaysa oyuncunun canını azaltır
+            if (Math.abs(distX) < 20 && Math.abs(distY) < 20) {
+                if (Math.random() < 0.02) { // Rastgele vuruş sıklığı
+                    playerStats.hp -= 5;
+                    if (playerStats.hp <= 0) {
+                        playerStats.hp = playerStats.maxHp; // Ölüp dirilme testi
+                        playerPos = { x: 220, y: 180 };
+                    }
+                }
+            }
+        }
+    });
+
+    updatePlayerPosition();
+    drawMonsters();
+    requestAnimationFrame(gameLoop);
+}
+
+// Oyunu Başlat
+updateUI();
+drawMonsters();
+gameLoop();
