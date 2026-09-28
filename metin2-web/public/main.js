@@ -53,8 +53,8 @@ function animate() {
     requestAnimationFrame(animate);
 
     const speed = 0.1;
-    if (keys.w) player.position.z -= speed;
-    if (keys.s) player.position.z += speed;
+    if (keys.w) player.position.z += speed;
+    if (keys.s) player.position.z -= speed;
     if (keys.a) player.position.x -= speed;
     if (keys.d) player.position.x += speed;
 
