@@ -128,8 +128,7 @@ function updateGameUI() {
     if (!ui) return;
     
     if (playerStats.isDead) {
-        ui.innerHTML = `<b style="color:red; font-size:20px;">ÖLDÜNÜZ!</b><br><br>
-                        <button onclick="window.resurrectPlayer()" style="padding:10px 20px; font-weight:bold; cursor:pointer;">Şehirde Yeniden Başla</button>`;
+        ui.innerHTML = `<b style="color:red; font-size:20px;">ÖLDÜNÜZ!</b><br><br><button onclick="window.resurrectPlayer()" style="padding:10px 20px; font-weight:bold; cursor:pointer;">Şehirde Yeniden Başla</button>`;
         ui.style.pointerEvents = "auto";
         return;
     }
@@ -164,9 +163,11 @@ window.addEventListener('keyup', (e) => { if(keys[e.key.toLowerCase()] !== undef
 window.addEventListener('click', () => {
     if (playerStats.isDead) return;
 
-    // Kılıç sallama rotasyon efekti (Yedek tasarım için aktif kalır)
-    sword.rotation.z = Math.PI / 3;
-    setTimeout(() => sword.rotation.z = 0, 150);
+    // Geçici kılıç hareketi (Model yüklenene kadar)
+    if (sword.parent) {
+        sword.rotation.z = Math.PI / 3;
+        setTimeout(() => sword.rotation.z = 0, 150);
+    }
 
     monsters.forEach((monster) => {
         if (monster.userData.isDead) return;
@@ -177,16 +178,13 @@ window.addEventListener('click', () => {
             monster.userData.isAngry = true; // Hasar alan canavar agresifleşir
             
             monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xffffff) });
-            setTimeout(() => {
-                monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xff0000) });
-            }, 100);
+            setTimeout(() => { monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xff0000) }); }, 100);
 
             if (monster.userData.health <= 0) {
                 monster.userData.isDead = true;
                 scene.remove(monster);
-                
-                // Deneyim (EXP) Hesabı
                 playerStats.exp += 35;
+                
                 if (playerStats.exp >= playerStats.maxExp) {
                     playerStats.level += 1;
                     playerStats.exp = 0;
@@ -199,7 +197,6 @@ window.addEventListener('click', () => {
                     setTimeout(() => scene.remove(levelLight), 1000);
                 }
                 
-                // Yeniden Canlanma Sistemi (Respawn)
                 setTimeout(() => {
                     monster.userData.health = monster.userData.maxHealth;
                     monster.userData.isDead = false;
@@ -213,7 +210,7 @@ window.addEventListener('click', () => {
     updateGameUI();
 });
 
-// --- 6. GERÇEK ZAMANLI OYUN DÖNGÜSÜ (AI VE HASAR ALGORİTMASI) ---
+// --- 6. GERÇEK ZAMANLI OYUN DÖNGÜSÜ ---
 const clock = new THREE.Clock();
 
 function animate() {
@@ -231,21 +228,15 @@ function animate() {
         if (keys.a) { playerGroup.position.x -= speed; playerGroup.rotation.y = -Math.PI / 2; moved = true; }
         if (keys.d) { playerGroup.position.x += speed; playerGroup.rotation.y = Math.PI / 2; moved = true; }
 
-        if (moved) {
-            playerGroup.position.y = Math.sin(time * 12) * 0.08;
-        } else {
-            playerGroup.position.y = 0;
-        }
+        if (moved) { playerGroup.position.y = Math.sin(time * 12) * 0.08; } else { playerGroup.position.y = 0; }
 
         // Canavar Kovalama Yapay Zekası ve Saldırı Döngüsü
         monsters.forEach((monster) => {
             if (monster.userData.isDead) return;
-
             const dist = monster.position.distanceTo(playerGroup.position);
 
             if (monster.userData.isAngry) {
                 const dir = new THREE.Vector3().subVectors(playerGroup.position, monster.position).normalize();
-                
                 if (dist > 1.3) {
                     monster.position.x += dir.x * 0.05;
                     monster.position.z += dir.z * 0.05;
@@ -256,7 +247,6 @@ function animate() {
                         playerStats.hp -= 45; // Köpek saldırı gücü
                         monster.position.y += 0.3; // Saldırı zıplama efekti
                         setTimeout(() => monster.position.y = 0, 150);
-                        
                         monster.userData.lastAttackTime = time;
                         
                         if (playerStats.hp <= 0) {
@@ -274,7 +264,6 @@ function animate() {
     // Yumuşak Kamera Takibi
     camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
     camera.lookAt(playerGroup.position);
-
     renderer.render(scene, camera);
 }
 
