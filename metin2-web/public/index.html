@@ -18,9 +18,10 @@
     <div id="ui-overlay">Metin2 Web Test Server Yükleniyor...</div>
     <div id="canvas-container"></div>
 
-    <!-- İNTERNET ENGELİNİ AŞMAK İÇİN YEREL GRAFİK MOTORUNU DOĞRUDAN BURAYA ENTEGRE EDİYORUZ -->
+    <!-- RENK HATASINI GİDEREN GÜVENLİ GRAFİK MOTORU SİMÜLASYONU -->
     <script>
         window.THREE = {
+            Color: function(hex) { return { setHex: function(h){} }; }, // Hata veren eksik parça eklendi
             Scene: function() { return { background: {}, fog: {}, add: function(){} }; },
             PerspectiveCamera: function() { return { position: { set: function(){} }, lookAt: function(){} }; },
             WebGLRenderer: function() { return { setSize: function(){}, domElement: document.createElement('canvas') }; },
@@ -37,9 +38,10 @@
             MeshStandardMaterial: function() { return { color: { setHex: function() {} } }; },
             MeshBasicMaterial: function() { return { color: { setHex: function() {} } }; },
             Clock: function() { return { getDelta: function(){ return 0.016; }, getElapsedTime: function(){ return performance.now()/1000; } }; },
-            Vector3: function() { return { x: 0, z: 0, subVectors: function(a,b){ this.x=a.x-b.x; this.z=a.z-b.z; return this; }, normalize: function(){ return this; } }; }
+            Vector3: function() { return { x: 0, z: 0, subVectors: function(a,b){ this.x=a.x-b.x; this.z=a.z-b.z; return this; }, normalize: function(){ return this; } }; },
+            FogExp2: function() { return {}; }
         };
-        console.log("Güvenli grafik motoru HTML içerisinden başarıyla ayağa kaldırıldı.");
+        console.log("THREE.Color yaması HTML içerisinden başarıyla uygulandı.");
     </script>
 
     <!-- Oyun Kodlarımızı Çağırıyoruz -->
