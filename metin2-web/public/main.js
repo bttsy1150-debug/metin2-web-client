@@ -207,7 +207,7 @@ function animate() {
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-    if (!playerStats.isDead) {
+       if (!playerStats.isDead) {
         // Oyuncu Hareketi ve Dönüş Yönü Yapılandırması
         const speed = 0.12;
         let moved = false;
@@ -243,3 +243,27 @@ function animate() {
                         monster.position.y += 0.3; // Isırma/Zıplama efekti
                         setTimeout(() => monster.position.y = 0, 150);
                         
+                        monster.userData.lastAttackTime = time;
+                        
+                        if (playerStats.hp <= 0) {
+                            playerStats.hp = 0;
+                            playerStats.isDead = true;
+                            playerGroup.rotation.z = Math.PI / 2; // Oyuncu yere serilir
+                        }
+                        updateGameUI();
+                    }
+                }
+            }
+        });
+    }
+
+    // Kamera Takip Algoritması
+    camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
+    camera.lookAt(playerGroup.position);
+
+    renderer.render(scene, camera);
+}
+
+// İlk Çalıştırma Başlangıcı
+updateGameUI();
+animate();
