@@ -39,7 +39,6 @@ let playerStats = {
 };
 
 // Gerçekçi Karakter Görünümü (Metin2 Savaşçı Temsili)
-// GLTF Modelleri arka planda yüklenirken ekranda boş kalmaması için zırh/kılıç şeklinde gruplanmış objeler kullanıyoruz
 const playerGroup = new THREE.Group();
 
 // Gövde (Keşiş Plaka Zırh Grisi)
@@ -225,14 +224,13 @@ function animate() {
             playerGroup.position.y = 0.75;
         }
 
-        // --- CANAVAR YAPAY ZEKASI VE OYUNCUYA HASAR VERME ---
+        // Canavar Yapay Zekası ve Hasar Verme
         monsters.forEach((monster) => {
             if (monster.userData.isDead) return;
 
             const dist = monster.position.distanceTo(playerGroup.position);
 
             if (monster.userData.isAngry) {
-                // Oyuncuya doğru yönel ve koş
                 const dir = new THREE.Vector3().subVectors(playerGroup.position, monster.position).normalize();
                 
                 if (dist > 1.3) {
@@ -240,5 +238,8 @@ function animate() {
                     monster.position.z += dir.z * 0.05;
                     monster.lookAt(playerGroup.position.x, monster.position.y, playerGroup.position.z);
                 } else {
-                    // Canavar menzile girdi, her 1.5 saniyede bir hasar vurur
                     if (time - monster.userData.lastAttackTime > 1.5) {
+                        playerStats.hp -= 45; // Köpek vuruş hasarı
+                        monster.position.y += 0.3; // Isırma/Zıplama efekti
+                        setTimeout(() => monster.position.y = 0, 150);
+                        
