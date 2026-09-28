@@ -2,23 +2,33 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Metin2 3D Browser Test İstemcisi</title>
+    <title>Metin2 Web Client</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
-        #ui-overlay { 
-            position: absolute; bottom: 20px; left: 20px; color: white; 
-            font-family: sans-serif; background: rgba(0,0,0,0.75); padding: 15px; 
-            border-radius: 8px; pointer-events: none; border: 2px solid #555;
-            z-index: 100;
+        body { margin: 0; background-color: #222; color: white; font-family: sans-serif; overflow: hidden; }
+        #game-container { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 600px; height: 450px; background-color: #3d5427; 
+            border: 4px solid #555; position: relative; border-radius: 8px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.6); overflow: hidden;
         }
+        .render-object { position: absolute; padding: 6px 12px; font-weight: bold; border-radius: 4px; font-size: 13px; text-shadow: 1px 1px 2px #000; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        #hero-player { background-color: #0000ff; border: 2px solid #fff; z-index: 10; color: white; }
+        .enemy-monster { background-color: #8b0000; border: 2px solid #ff0000; color: #ffcccc; }
+        #stats-ui { 
+            position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); 
+            padding: 12px; border-radius: 6px; border: 2px solid #666; width: 240px; z-index: 200;
+        }
+        .ui-bar { width: 100%; background: #444; border: 1px solid #000; padding:1px; margin-bottom:6px; border-radius:2px; overflow:hidden; }
+        .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; transition: width 0.1s; }
+        .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; transition: width 0.1s; }
     </style>
-    <!-- İnternet kısıtlamasına takılmayan, %100 kararlı çalışan resmi Three.js motoru linki -->
-    <script src="https://cloudflare.com"></script>
 </head>
 <body>
-    <div id="ui-overlay">Metin2 Web Test Server Yükleniyor...</div>
-    <div id="canvas-container"></div>
+    <div id="game-container">
+        <!-- Oyuncu Karakteri -->
+        <div id="hero-player" class="render-object">[Savaşçı]</div>
+    </div>
+    <div id="stats-ui">Metin2 Yükleniyor...</div>
     <script src="main.js"></script>
 </body>
 </html>
