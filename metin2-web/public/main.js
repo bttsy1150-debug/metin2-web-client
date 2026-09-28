@@ -33,7 +33,7 @@ let playerStats = { level: 2, hp: 855, maxHp: 900, exp: 35, maxExp: 100, isDead:
 
 const playerGroup = new THREE.Group();
 
-// Gerçekçi Karakter Görünümü (Metin2 Savaşçı Temsili)
+// Savaşçı Görünümü (Gövde + Baş + Kılıç)
 const bodyGeo = new THREE.CylinderGeometry(0.3, 0.3, 1.4, 16);
 const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a5359, metalness: 0.7, roughness: 0.2 });
 const body = new THREE.Mesh(bodyGeo, bodyMat);
@@ -65,7 +65,7 @@ const spawnCoordinates = [
 function spawnMonster(id, x, z) {
     const monsterGroup = new THREE.Group();
     
-    // Orijinal Canavar Temsili (Gövde + Kafa Düzeni)
+    // Canavar Görünümü (Gövde + Kafa Düzeni)
     const torsoGeo = new THREE.BoxGeometry(0.7, 0.6, 1.2);
     const torsoMat = new THREE.MeshStandardMaterial({ color: 0x5a3d28, roughness: 0.9 });
     const torso = new THREE.Mesh(torsoGeo, torsoMat);
@@ -145,7 +145,7 @@ window.addEventListener('click', () => {
         const distance = playerGroup.position.distanceTo(monster.position);
         if (distance < 2.8) {
             monster.userData.health -= 30;
-            monster.userData.isAngry = true; // Hasar alan canavar kışkırtılır
+            monster.userData.isAngry = true; 
             
             monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xffffff) });
             setTimeout(() => { monster.children.forEach(c => { if(c.material) c.material.color.setHex(0xff0000) }); }, 100);
@@ -216,14 +216,14 @@ function animate() {
                     // Canavar her 1.5 saniyede bir oyuncuya hasar verir
                     if (time - monster.userData.lastAttackTime > 1.5) {
                         playerStats.hp -= 45; 
-                        monster.position.y += 0.3; // Isırma efekti
+                        monster.position.y += 0.3; 
                         setTimeout(() => monster.position.y = 0, 150);
                         monster.userData.lastAttackTime = time;
                         
                         if (playerStats.hp <= 0) {
                             playerStats.hp = 0;
                             playerStats.isDead = true;
-                            playerGroup.rotation.z = Math.PI / 2; // Oyuncu yere serilir
+                            playerGroup.rotation.z = Math.PI / 2; 
                         }
                         updateGameUI();
                     }
@@ -233,7 +233,7 @@ function animate() {
     }
 
     // Yumuşak Kamera Takibi
-    camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
+ camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
     camera.lookAt(playerGroup.position);
     renderer.render(scene, camera);
 }
