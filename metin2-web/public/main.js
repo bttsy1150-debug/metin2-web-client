@@ -233,11 +233,3 @@ function animate() {
     }
 
     // Yumuşak Kamera Takibi
- camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
-    camera.lookAt(playerGroup.position);
-    renderer.render(scene, camera);
-}
-
-// Projeyi Çalıştır
-updateGameUI();
-animate();
