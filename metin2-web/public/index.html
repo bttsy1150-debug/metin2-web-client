@@ -2,16 +2,22 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Metin2 3D Browser Test Istemcisi</title>
+    <title>Metin2 3D Browser Test İstemcisi</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; }
         #canvas-container { width: 100vw; height: 100vh; }
-        #ui-overlay { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; font-family: monospace; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; pointer-events: none;}
+        #ui-overlay { 
+            position: absolute; bottom: 20px; left: 20px; color: white; 
+            font-family: sans-serif; background: rgba(0,0,0,0.75); padding: 15px; 
+            border-radius: 8px; pointer-events: none; border: 2px solid #555;
+            z-index: 100;
+        }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Sadece temel kütüphaneyi çekiyoruz, ek yüklere gerek kalmadı -->
+    <script src="https://jsdelivr.net"></script>
 </head>
 <body>
-    <div id="ui-overlay">YONLENDIRME: WASD ile hareket et | Sol Tik: Hayvana Saldir</div>
+    <div id="ui-overlay">Metin2 Web Test Server Başlatılıyor...</div>
     <div id="canvas-container"></div>
     <script src="main.js"></script>
 </body>
