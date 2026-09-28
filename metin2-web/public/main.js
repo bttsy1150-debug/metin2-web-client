@@ -9,11 +9,9 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.4);
-hemiLight.position.set(0, 20, 0);
 scene.add(hemiLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-dirLight.position.set(5, 15, 7);
 scene.add(dirLight);
 
 // Yeşil Zemin ve Çizgiler
@@ -28,7 +26,6 @@ scene.add(grid);
 // --- 2. OYUNCU VE CANAVAR STATÜLERİ ---
 let playerStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, isDead: false };
 
-// 3D Savaşçı Grubu (Zırh, Kask ve Kılıç)
 const playerGroup = new THREE.Group();
 const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.4, 16), new THREE.MeshStandardMaterial({ color: 0x4a5359, metalness: 0.7 }));
 body.position.y = 0.7;
