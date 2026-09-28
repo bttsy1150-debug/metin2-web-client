@@ -17,7 +17,7 @@ const ground = new THREE.Mesh(groundGeo, groundMat);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-const playerGeo = new THREE.CapsuleGeometry(0.4, 1, 4, 8);
+const playerGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.5, 16);
 const playerMat = new THREE.MeshPhongMaterial({ color: 0x0000ff });
 const player = new THREE.Mesh(playerGeo, playerMat);
 player.position.y = 0.9;
