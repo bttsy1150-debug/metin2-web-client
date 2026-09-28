@@ -2,49 +2,31 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Metin2 3D Browser Test İstemcisi</title>
+    <title>Metin2 Tarayıcı Sürümü</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; }
-        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        body { margin: 0; background-color: #222; color: white; font-family: sans-serif; overflow: hidden; }
+        #game-map { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; height: 400px; background-color: #3d5427; 
+            border: 3px solid #555; position: relative; border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .entity { position: absolute; padding: 5px 10px; font-weight: bold; border-radius: 4px; font-size: 12px; text-shadow: 1px 1px 1px #000; transition: all 0.05s linear; }
+        #player { background-color: #0000ff; border: 2px solid #fff; z-index: 10; }
+        .monster { background-color: #8b0000; border: 2px solid #ff0000; }
         #ui-overlay { 
-            position: absolute; bottom: 20px; left: 20px; color: white; 
-            font-family: sans-serif; background: rgba(0,0,0,0.75); padding: 15px; 
-            border-radius: 8px; pointer-events: none; border: 2px solid #555;
-            z-index: 100;
+            position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.85); 
+            padding: 15px; border-radius: 8px; border: 2px solid #555; width: 260px;
         }
     </style>
 </head>
 <body>
-    <div id="ui-overlay">Metin2 Web Test Server Yükleniyor...</div>
-    <div id="canvas-container"></div>
+    <!-- Gerçek görsel harita alanı -->
+    <div id="game-map">
+        [Savaşçı]</div>
+    </div>
 
-    <!-- RENK HATASINI GİDEREN GÜVENLİ GRAFİK MOTORU SİMÜLASYONU -->
-    <script>
-        window.THREE = {
-            Color: function(hex) { return { setHex: function(h){} }; }, // Hata veren eksik parça eklendi
-            Scene: function() { return { background: {}, fog: {}, add: function(){} }; },
-            PerspectiveCamera: function() { return { position: { set: function(){} }, lookAt: function(){} }; },
-            WebGLRenderer: function() { return { setSize: function(){}, domElement: document.createElement('canvas') }; },
-            AmbientLight: function() { return {}; },
-            HemisphereLight: function() { return {}; },
-            DirectionalLight: function() { return {}; },
-            Mesh: function() { return { rotation: {}, position: { set: function(){}, z: 0, x: 0, y: 0, distanceTo: function(){ return 2; } }, userData: {}, children: [] }; },
-            Group: function() { return { position: { set: function(){} }, rotation: {}, add: function(){}, remove: function(){} }; },
-            PlaneGeometry: function() { return {}; },
-            CylinderGeometry: function() { return {}; },
-            SphereGeometry: function() { return {}; },
-            BoxGeometry: function() { return {}; },
-            GridHelper: function() { return { position: {} }; },
-            MeshStandardMaterial: function() { return { color: { setHex: function() {} } }; },
-            MeshBasicMaterial: function() { return { color: { setHex: function() {} } }; },
-            Clock: function() { return { getDelta: function(){ return 0.016; }, getElapsedTime: function(){ return performance.now()/1000; } }; },
-            Vector3: function() { return { x: 0, z: 0, subVectors: function(a,b){ this.x=a.x-b.x; this.z=a.z-b.z; return this; }, normalize: function(){ return this; } }; },
-            FogExp2: function() { return {}; }
-        };
-        console.log("THREE.Color yaması HTML içerisinden başarıyla uygulandı.");
-    </script>
-
-    <!-- Oyun Kodlarımızı Çağırıyoruz -->
+    <div id="ui-overlay">Yükleniyor...</div>
     <script src="main.js"></script>
 </body>
 </html>
