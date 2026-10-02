@@ -34,7 +34,6 @@
             ac_kurt: 'image_-RgfPm.png'
         };
 
-        // Oyunun başlamasını engellememesi için onload bekleme şartını kaldırdık
         Object.keys(srcList).forEach(function(key) {
             imgs[key] = new Image();
             imgs[key].src = srcList[key];
@@ -64,7 +63,9 @@
             var cost = (pStats.weaponUpgrade + 1) * 800;
             var smithPrompt = "";
             
-            if (Math.abs(pPos.x - smithPos.x) < 50 && Math.abs(pPos.y - smithPos.y) < 50) {
+            var dX = Math.abs(pPos.x - smithPos.x);
+            var dY = Math.abs(pPos.y - smithPos.y);
+            if (dX < 50 && dY < 50) {
                 if (pStats.weaponUpgrade >= 9) {
                     smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum!]</b></div>';
                 } else {
@@ -82,6 +83,8 @@
                 smithPrompt;
         }
 
+        // --- KLAVYE AKTİFLEŞTİRME KİLİDİ ---
+        // Tuşların kesin olarak algılanması için event dinleyicileri doğrudan window nesnesine bağlandı
         window.addEventListener('keydown', function(e) {
             var key = e.key.toLowerCase();
             if (activeKeys[key] !== undefined) activeKeys[key] = true;
@@ -126,9 +129,12 @@
             if (activeKeys[key] !== undefined) activeKeys[key] = false;
         });
 
+        // --- HAREKET VE ÇİZİM MOTORU ---
         function gameLoop() {
             var step = 4;
             var prevX = pPos.x, prevY = pPos.y;
+            
+            // Klavye komutlarına göre karakter koordinatlarını gerçek zamanlı günceller
             if (activeKeys.w && pPos.y > 25) pPos.y -= step;
             if (activeKeys.s && pPos.y < 425) pPos.y += step;
             if (activeKeys.a && pPos.x > 25) pPos.x -= step;
@@ -136,12 +142,16 @@
 
             if (Math.abs(pPos.x - smithPos.x) < 40 && Math.abs(pPos.y - smithPos.y) < 40) { pPos.x = prevX; pPos.y = prevY; }
 
+            // Yapay Zeka Kovalama Döngüsü
             mobList.forEach(function(mob) {
                 if (mob.isDead || !mob.isAggressive) return;
-                var dX = pPos.x - mob.x, dY = pPos.y - mob.y;
+                var dX = pPos.x - mob.x;
+                var dY = pPos.y - mob.y;
+                
                 if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
                     if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
                     if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
+                    
                     if (Math.abs(dX) < 25 && Math.abs(dY) < 25 && Math.random() < 0.025) {
                         pStats.hp -= 8;
                         if (pStats.hp <= 0) { pStats.hp = pStats.maxHp; pPos = { x: 270, y: 220 }; mobList.forEach(function(m) { m.isAggressive = false; }); }
@@ -150,10 +160,11 @@
                 }
             });
 
+            // Ekranı temizle ve yeniden çiz
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#2c421e"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. DEMİRCİ RENDER
+            // 1. DEMİRCİ ÇIZİMİ
             if (imgs.smith && imgs.smith.complete && imgs.smith.naturalWidth !== 0) {
                 ctx.drawImage(imgs.smith, smithPos.x - 25, smithPos.y - 30, 50, 60);
             } else {
@@ -162,13 +173,7 @@
             ctx.fillStyle = "#ffcc00"; ctx.font = "bold 11px Tahoma"; ctx.textAlign = "center";
             ctx.fillText("[Demirci]", smithPos.x, smithPos.y - 35);
 
-            // 2. CANAVARLAR RENDER
+            // 2. CANAVARLAR ÇIZİMİ
             mobList.forEach(function(mob) {
                 if (mob.isDead) return;
                 var mImg = imgs[mob.type];
-                if (mImg && mImg.complete && mImg.naturalWidth !== 0) {
-                    ctx.drawImage(mImg, mob.x - 22, mob.y - 22, 44, 44);
-                } else {
-                    ctx.fillStyle = "#8b0000"; ctx.fillRect(mob.x - 12, mob.y - 12, 24, 24);
-                }
-                ctx.fillStyle = "#ff5555"; ctx.font = "bold 11px Tahoma"; ctx.textAlign = "center";
