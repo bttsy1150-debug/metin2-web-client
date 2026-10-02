@@ -17,11 +17,12 @@ const smithPos = { x: 500, y: 80 };
 let droppedYangList = [];
 let yangIdCounter = 0;
 
-const container = document.getElementById('game-container');
-const playerEl = document.getElementById('hero-player');
+// Elementler DOM yüklendikten sonra atanacak
+let container = null;
+let playerEl = null;
 
-// Dinamik Efekt Oluşturucular
 function spawnDamageText(x, y, amount) {
+    if (!container) return;
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-indicator';
     damageEl.innerText = `-${amount}`;
@@ -32,6 +33,7 @@ function spawnDamageText(x, y, amount) {
 }
 
 function spawnSmithText(x, y, text, isSuccess) {
+    if (!container) return;
     const textEl = document.createElement('div');
     textEl.className = 'blacksmith-text';
     textEl.innerText = text;
@@ -42,23 +44,20 @@ function spawnSmithText(x, y, text, isSuccess) {
     setTimeout(() => { textEl.remove(); }, 800);
 }
 
-// Canavar öldüğünde yere Yang düşüren fonksiyon
 function dropYang(x, y) {
     yangIdCounter++;
     let randomAmount = Math.floor(Math.random() * (450 - 150 + 1)) + 150;
-    
     let yangObj = {
         id: yangIdCounter,
         x: x + (Math.random() * 20 - 10),
         y: y + (Math.random() * 20 - 10),
         amount: randomAmount
     };
-    
     droppedYangList.push(yangObj);
 }
 
-// Canavarları ve Oyuncuyu Çizen Fonksiyonlar
 function renderMonsters() {
+    if (!container) return;
     mobList.forEach(mob => {
         let mEl = document.getElementById(`mob-${mob.id}`);
         if (mob.isDead) { if (mEl) mEl.remove(); return; }
@@ -75,11 +74,12 @@ function renderMonsters() {
 }
 
 function renderPlayer() {
-    playerEl.style.left = pPos.x + 'px';
-    playerEl.style.top = pPos.y + 'px';
+    if (playerEl) {
+        playerEl.style.left = pPos.x + 'px';
+        playerEl.style.top = pPos.y + 'px';
+    }
 }
 
-// Geliştirilmiş Alt Arayüz Paneli
 function drawInterface() {
     let ui = document.getElementById('stats-ui');
     if (!ui) return;
@@ -112,14 +112,11 @@ function drawInterface() {
     `;
 }
 
-// Klavye Dinleyicileri
 const activeKeys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = false; });
 
-// "Space" (Saldırı) Ivy "E" (Demirci Artı Basma) Dinleyicisi
 window.addEventListener('keydown', (e) => {
-    // --- DEMİRCİ ETKİLEŞİMİ (E TUŞU) ---
     if (e.key === 'e' || e.key === 'E') {
         let dX = Math.abs(pPos.x - smithPos.x);
         let dY = Math.abs(pPos.y - smithPos.y);
@@ -129,9 +126,7 @@ window.addEventListener('keydown', (e) => {
                 spawnSmithText(smithPos.x, smithPos.y, "Maks+9!", false);
                 return;
             }
-            
             let cost = (pStats.weaponUpgrade + 1) * 800;
-            
             if (pStats.yang >= cost) {
                 pStats.yang -= cost;
                 pStats.weaponUpgrade++; 
@@ -143,20 +138,16 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // --- SALDIRI MEKANİĞİ (SPACE TUŞU) ---
     if (e.key === ' ' || e.code === 'Space') {
         let playerDamage = 30 + (pStats.weaponUpgrade * 10);
-
         mobList.forEach(mob => {
             if (mob.isDead) return;
-
             let dX = Math.abs(pPos.x - mob.x);
             let dY = Math.abs(pPos.y - mob.y);
 
             if (dX < 60 && dY < 60) {
                 mob.hp -= playerDamage;
                 mob.isAggressive = true; 
-                
                 spawnDamageText(mob.x, mob.y, playerDamage);
                 
                 const mEl = document.getElementById(`mob-${mob.id}`);
@@ -171,7 +162,6 @@ window.addEventListener('keydown', (e) => {
                 if (mob.hp <= 0) {
                     mob.isDead = true;
                     pStats.exp += 35;
-                    
                     dropYang(mob.x, mob.y);
                     
                     if (pStats.exp >= pStats.maxExp) {
@@ -181,15 +171,7 @@ window.addEventListener('keydown', (e) => {
                     setTimeout(() => {
                         mob.x = Math.floor(Math.random() * (570 - 30 + 1)) + 30;
                         mob.y = Math.floor(Math.random() * (420 - 30 + 1)) + 30;
-                        
-                        if (mob.name.includes("Aç Kurt") || mob.name === "Kurt") {
-                            mob.hp = 150;
-                        } else if (mob.name.includes("Aç Yabani Köpek")) {
-                            mob.hp = 120;
-                        } else {
-                            mob.hp = 90;
-                        }
-                        
+                        mob.hp = mob.name.includes("Kurt") ? 150 : (mob.name.includes("Aç Yabani") ? 120 : 90);
                         mob.isDead = false;
                         mob.isAggressive = false; 
                         renderMonsters();
@@ -202,7 +184,6 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Oyun Motoru Ana Döngüsü
 function runEngine() {
     const moveStep = 4;
     let originalX = pPos.x;
@@ -213,7 +194,6 @@ function runEngine() {
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
-    // Demirci NPC'sinin içinden geçmeyi engelleme
     let distToSmithX = Math.abs(pPos.x - smithPos.x);
     let distToSmithY = Math.abs(pPos.y - smithPos.y);
     if (distToSmithX < 35 && distToSmithY < 25) {
@@ -225,34 +205,49 @@ function runEngine() {
         drawInterface();
     }
 
-    // Yerdeki Yang'ları Toplama Kontrolü (Hata vermemesi için tersten dönüyoruz)
-    for (let i = droppedYangList.length - 1; i >= 0; i--) {
-        let yang = droppedYangList[i];
-        let yEl = document.getElementById(`yang-${yang.id}`);
-        
-        if (!yEl) {
-            yEl = document.createElement('div');
-            yEl.className = 'yang-drop';
-            yEl.id = `yang-${yang.id}`;
-            yEl.innerText = `${yang.amount} Yang`;
-            yEl.style.left = yang.x + 'px';
-            yEl.style.top = yang.y + 'px';
-            container.appendChild(yEl);
-        }
+    if (container) {
+        for (let i = droppedYangList.length - 1; i >= 0; i--) {
+            let yang = droppedYangList[i];
+            let yEl = document.getElementById(`yang-${yang.id}`);
+            
+            if (!yEl) {
+                yEl = document.createElement('div');
+                yEl.className = 'yang-drop';
+                yEl.id = `yang-${yang.id}`;
+                yEl.innerText = `${yang.amount} Yang`;
+                yEl.style.left = yang.x + 'px';
+                yEl.style.top = yang.y + 'px';
+                container.appendChild(yEl);
+            }
 
-        let distX = Math.abs(pPos.x - yang.x);
-        let distY = Math.abs(pPos.y - yang.y);
-        
-        if (distX < 25 && distY < 25) {
-            pStats.yang += yang.amount;
-            yEl.remove();
-            droppedYangList.splice(i, 1);
-            drawInterface();
+            let distX = Math.abs(pPos.x - yang.x);
+            let distY = Math.abs(pPos.y - yang.y);
+            
+            if (distX < 25 && distY < 25) {
+                pStats.yang += yang.amount;
+                yEl.remove();
+                droppedYangList.splice(i, 1);
+                drawInterface();
+            }
         }
     }
 
-    // Canavar Yapay Zekası
     mobList.forEach(mob => {
-        if (mob.isDead) return;
-        if (!mob.isAggressive) return;
+        if (mob.isDead || !mob.isAggressive) return;
+        let dX = pPos.x - mob.x;
+        let dY = pPos.y - mob.y;
 
+        if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
+            if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
+            if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
+            
+            if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
+                if (Math.random() < 0.025) {
+                    pStats.hp -= 8;
+                    if (pStats.hp <= 0) {
+                        pStats.hp = pStats.maxHp;
+                        pPos = { x: 270, y: 200 }; 
+                        mobList.forEach(m => m.isAggressive = false);
+                    }
+                    drawInterface();
+                }
