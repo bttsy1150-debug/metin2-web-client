@@ -19,7 +19,8 @@
             background-repeat: no-repeat;
             background-position: center;
             background-size: contain;
-            width: 45px; height: 50px;
+            width: 50px; height: 50px;
+            display: block !important;
         }
 
         /* Karakter İsim Etiketleri */
@@ -36,34 +37,41 @@
             padding: 1px 4px;
             border-radius: 2px;
             pointer-events: none;
+            z-index: 999;
         }
         
-        /* SAVAŞÇI */
+        /* OYUNCU SAVAŞÇI */
         #hero-player { 
             z-index: 10; 
             background-image: url('image_v24_-c.png'); 
+            background-color: #0000ff; /* Resim gelmezse mavi kutu olur, kilitlenmez */
+            border: 2px solid #fff;
+            border-radius: 4px;
         }
         #hero-player .name-tag { color: #88ccff; }
         
         /* CANAVARLAR */
-        .enemy-monster { z-index: 5; }
+        .enemy-monster { z-index: 5; background-color: #8b0000; border: 2px solid #ff0000; border-radius: 4px; }
         .enemy-monster .name-tag { color: #ff5555; }
         
-        /* Resimlerin Yüklenememe İhtimaline Karşı Renkli Alt Taban Hazırlığı */
-        .mob-yabani-kopek { background-image: url('image_Wc8LTA.png'); background-color: rgba(139,0,0,0.2); }
-        .mob-ac-yabani-kopek { background-image: url('image_B2Bglw.png'); background-color: rgba(139,0,0,0.2); }
-        .mob-kurt { background-image: url('image_eMPP7C.png'); background-color: rgba(139,0,0,0.2); }
-        .mob-ac-kurt { background-image: url('image_-RgfPm.png'); background-color: rgba(139,0,0,0.2); }
+        /* Canavar Görselleri (Resim yoksa arka plan rengi kalır) */
+        .mob-yabani-kopek { background-image: url('image_Wc8LTA.png'); }
+        .mob-ac-yabani-kopek { background-image: url('image_B2Bglw.png'); }
+        .mob-kurt { background-image: url('image_eMPP7C.png'); }
+        .mob-ac-kurt { background-image: url('image_-RgfPm.png'); }
         
         /* DEMİRCİ */
         .npc-blacksmith { 
             z-index: 8;
             background-image: url('image_JRqo63.png');
+            background-color: #555555;
+            border: 2px solid #aaa;
+            border-radius: 4px;
         }
-        .npc-blacksmith .name-tag { color: #ffcc00; background: rgba(0,0,0,0.5); }
+        .npc-blacksmith .name-tag { color: #ffcc00; }
 
         /* Arayüz Paneli */
-        #stats-ui { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 6px; border: 2px solid #555; width: 240px; z-index: 200; }
+        #stats-ui { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 6px; border: 2px solid #555; width: 240px; z-index: 200; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .ui-bar { width: 100%; background: #444; border: 1px solid #000; padding:1px; margin-bottom:6px; border-radius:2px; overflow:hidden; }
         .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; transition: width 0.1s; }
         .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; transition: width 0.1s; }
@@ -90,11 +98,7 @@
     </div>
     <div id="stats-ui">Metin2 Yükleniyor...</div>
 
-    <!-- Önbellek Kırıcı Modül -->
-    <script>
-        var script = document.createElement('script');
-        script.src = 'main.js?t=' + new Date().getTime();
-        document.body.appendChild(script);
-    </script>
+    <!-- Güvenli ve Bağımsız Script Yükleyici -->
+    <script src="main.js"></script>
 </body>
 </html>
