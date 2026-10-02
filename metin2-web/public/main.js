@@ -3,7 +3,6 @@ let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100 };
 let pPos = { x: 270, y: 200 }; // Haritanın tam merkezi
 
 // --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
-// Her canavara ilk başta saldırmaması için 'isAggressive: false' eklendi.
 let mobList = [
     { id: 1, name: "Yabani Köpek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
     { id: 2, name: "Yabani Köpek", x: 480, y: 70, hp: 90, isDead: false, isAggressive: false },
@@ -14,6 +13,24 @@ let mobList = [
 
 const container = document.getElementById('game-container');
 const playerEl = document.getElementById('hero-player');
+
+// Dinamik Uçan Hasar Efekti Oluşturucu
+function spawnDamageText(x, y, amount) {
+    const damageEl = document.createElement('div');
+    damageEl.className = 'damage-indicator';
+    damageEl.innerText = `-${amount}`;
+    
+    // Canavarın kafasının biraz üzerinde çıkması için Y koordinatını 25px yukarı alıyoruz
+    damageEl.style.left = x + 'px';
+    damageEl.style.top = (y - 25) + 'px';
+    
+    container.appendChild(damageEl);
+    
+    // Animasyon bittiğinde elementi DOM'dan temizle
+    setTimeout(() => {
+        damageEl.remove();
+    }, 600);
+}
 
 // Canavarları ekrana görsel olarak basan ve konumlarını güncelleyen fonksiyon
 function renderMonsters() {
@@ -78,7 +95,10 @@ window.addEventListener('keydown', (e) => {
             // Saldırı mesafesi kontrolü
             if (dX < 60 && dY < 60) {
                 mob.hp -= 30;
-                mob.isAggressive = true; // Oyuncu canavara vurduğu için canavar artık AGRESİF oldu!
+                mob.isAggressive = true; 
+                
+                // Uçan Hasar Rakamını Tetikle
+                spawnDamageText(mob.x, mob.y, 30);
                 
                 // Vurulma efekti
                 const mEl = document.getElementById(`mob-${mob.id}`);
@@ -102,7 +122,7 @@ window.addEventListener('keydown', (e) => {
                         pStats.hp = pStats.maxHp;
                     }
 
-                    // 5 Saniye sonra canavarı rastgele konumda ve pasif (sakin) olarak dirilt
+                    // 5 Saniye sonra canavarı rastgele konumda ve pasif olarak dirilt
                     setTimeout(() => {
                         mob.x = Math.floor(Math.random() * (570 - 30 + 1)) + 30;
                         mob.y = Math.floor(Math.random() * (420 - 30 + 1)) + 30;
@@ -116,7 +136,7 @@ window.addEventListener('keydown', (e) => {
                         }
                         
                         mob.isDead = false;
-                        mob.isAggressive = false; // Yeniden doğan canavar ilk başta yine sakin doğar
+                        mob.isAggressive = false; 
                         renderMonsters();
                     }, 5000);
                 }
@@ -138,14 +158,11 @@ function runEngine() {
     // Canavar Yapay Zekası
     mobList.forEach(mob => {
         if (mob.isDead) return;
-
-        // EĞER OYUNCU VURMADIYSA canavar tamamen hareketsiz kalır ve saldırmaz
         if (!mob.isAggressive) return;
 
         let dX = pPos.x - mob.x;
         let dY = pPos.y - mob.y;
 
-        // Canavar agresifse oyuncuyu kovalamaya başlar
         if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
             if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
@@ -156,9 +173,7 @@ function runEngine() {
                     pStats.hp -= 8;
                     if (pStats.hp <= 0) {
                         pStats.hp = pStats.maxHp;
-                        pPos = { x: 270, y: 200 }; // Ölen oyuncu merkezde doğar
-                        
-                        // Oyuncu öldüğü için tüm canavarların agresifliği sıfırlanır (sakinleşirler)
+                        pPos = { x: 270, y: 200 }; 
                         mobList.forEach(m => m.isAggressive = false);
                     }
                     drawInterface();
