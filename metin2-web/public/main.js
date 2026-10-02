@@ -17,22 +17,23 @@ const smithPos = { x: 500, y: 80 };
 let droppedYangList = [];
 let yangIdCounter = 0;
 
-// Elementler DOM yüklendikten sonra atanacak
-let container = null;
-let playerEl = null;
+// Klavye Dinleyicileri
+const activeKeys = { w: false, a: false, s: false, d: false };
 
 function spawnDamageText(x, y, amount) {
+    const container = document.getElementById('game-container');
     if (!container) return;
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-indicator';
-    damageEl.innerText = `-${amount}`;
+    damageEl.innerText = '-' + amount;
     damageEl.style.left = x + 'px';
     damageEl.style.top = (y - 25) + 'px';
     container.appendChild(damageEl);
-    setTimeout(() => { damageEl.remove(); }, 600);
+    setTimeout(function() { damageEl.remove(); }, 600);
 }
 
 function spawnSmithText(x, y, text, isSuccess) {
+    const container = document.getElementById('game-container');
     if (!container) return;
     const textEl = document.createElement('div');
     textEl.className = 'blacksmith-text';
@@ -41,12 +42,12 @@ function spawnSmithText(x, y, text, isSuccess) {
     textEl.style.left = x + 'px';
     textEl.style.top = (y - 30) + 'px';
     container.appendChild(textEl);
-    setTimeout(() => { textEl.remove(); }, 800);
+    setTimeout(function() { textEl.remove(); }, 800);
 }
 
 function dropYang(x, y) {
     yangIdCounter++;
-    let randomAmount = Math.floor(Math.random() * (450 - 150 + 1)) + 150;
+    let randomAmount = Math.floor(Math.random() * 301) + 150;
     let yangObj = {
         id: yangIdCounter,
         x: x + (Math.random() * 20 - 10),
@@ -57,15 +58,20 @@ function dropYang(x, y) {
 }
 
 function renderMonsters() {
+    const container = document.getElementById('game-container');
     if (!container) return;
-    mobList.forEach(mob => {
-        let mEl = document.getElementById(`mob-${mob.id}`);
-        if (mob.isDead) { if (mEl) mEl.remove(); return; }
+    
+    mobList.forEach(function(mob) {
+        let mEl = document.getElementById('mob-' + mob.id);
+        if (mob.isDead) {
+            if (mEl) mEl.remove();
+            return;
+        }
         if (!mEl) {
             mEl = document.createElement('div');
             mEl.className = 'render-object enemy-monster';
-            mEl.id = `mob-${mob.id}`;
-            mEl.innerText = `[${mob.name}]`;
+            mEl.id = 'mob-' + mob.id;
+            mEl.innerText = '[' + mob.name + ']';
             container.appendChild(mEl);
         }
         mEl.style.left = mob.x + 'px';
@@ -74,6 +80,7 @@ function renderMonsters() {
 }
 
 function renderPlayer() {
+    const playerEl = document.getElementById('hero-player');
     if (playerEl) {
         playerEl.style.left = pPos.x + 'px';
         playerEl.style.top = pPos.y + 'px';
@@ -92,9 +99,9 @@ function drawInterface() {
     let dY = Math.abs(pPos.y - smithPos.y);
     if (dX < 50 && dY < 50) {
         if (pStats.weaponUpgrade >= 9) {
-            smithPrompt = `<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>`;
+            smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>';
         } else {
-            smithPrompt = `<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center; background:rgba(255,255,255,0.1); padding:2px; border-radius:4px;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>${cost} Yang</b></div>`;
+            smithPrompt = '<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center; background:rgba(255,255,255,0.1); padding:2px; border-radius:4px;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>' + cost + ' Yang</b></div>';
         }
     }
 
@@ -112,11 +119,17 @@ function drawInterface() {
     `;
 }
 
-const activeKeys = { w: false, a: false, s: false, d: false };
-window.addEventListener('keydown', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = true; });
-window.addEventListener('keyup', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = false; });
+window.addEventListener('keydown', function(e) {
+    let key = e.key.toLowerCase();
+    if (activeKeys[key] !== undefined) activeKeys[key] = true;
+});
 
-window.addEventListener('keydown', (e) => {
+window.addEventListener('keyup', function(e) {
+    let key = e.key.toLowerCase();
+    if (activeKeys[key] !== undefined) activeKeys[key] = false;
+});
+
+window.addEventListener('keydown', function(e) {
     if (e.key === 'e' || e.key === 'E') {
         let dX = Math.abs(pPos.x - smithPos.x);
         let dY = Math.abs(pPos.y - smithPos.y);
@@ -140,7 +153,7 @@ window.addEventListener('keydown', (e) => {
 
     if (e.key === ' ' || e.code === 'Space') {
         let playerDamage = 30 + (pStats.weaponUpgrade * 10);
-        mobList.forEach(mob => {
+        mobList.forEach(function(mob) {
             if (mob.isDead) return;
             let dX = Math.abs(pPos.x - mob.x);
             let dY = Math.abs(pPos.y - mob.y);
@@ -150,11 +163,11 @@ window.addEventListener('keydown', (e) => {
                 mob.isAggressive = true; 
                 spawnDamageText(mob.x, mob.y, playerDamage);
                 
-                const mEl = document.getElementById(`mob-${mob.id}`);
+                const mEl = document.getElementById('mob-' + mob.id);
                 if (mEl) {
                     mEl.style.backgroundColor = '#ffffff';
-                    setTimeout(() => { 
-                        let currentEl = document.getElementById(`mob-${mob.id}`);
+                    setTimeout(function() { 
+                        let currentEl = document.getElementById('mob-' + mob.id);
                         if (currentEl) currentEl.style.backgroundColor = '#8b0000'; 
                     }, 80);
                 }
@@ -168,9 +181,9 @@ window.addEventListener('keydown', (e) => {
                         pStats.level++; pStats.exp = 0; pStats.maxHp += 100; pStats.hp = pStats.maxHp;
                     }
 
-                    setTimeout(() => {
-                        mob.x = Math.floor(Math.random() * (570 - 30 + 1)) + 30;
-                        mob.y = Math.floor(Math.random() * (420 - 30 + 1)) + 30;
+                    setTimeout(function() {
+                        mob.x = Math.floor(Math.random() * 541) + 30;
+                        mob.y = Math.floor(Math.random() * 391) + 30;
                         mob.hp = mob.name.includes("Kurt") ? 150 : (mob.name.includes("Aç Yabani") ? 120 : 90);
                         mob.isDead = false;
                         mob.isAggressive = false; 
@@ -205,16 +218,17 @@ function runEngine() {
         drawInterface();
     }
 
+    const container = document.getElementById('game-container');
     if (container) {
         for (let i = droppedYangList.length - 1; i >= 0; i--) {
             let yang = droppedYangList[i];
-            let yEl = document.getElementById(`yang-${yang.id}`);
+            let yEl = document.getElementById('yang-' + yang.id);
             
             if (!yEl) {
                 yEl = document.createElement('div');
                 yEl.className = 'yang-drop';
-                yEl.id = `yang-${yang.id}`;
-                yEl.innerText = `${yang.amount} Yang`;
+                yEl.id = 'yang-' + yang.id;
+                yEl.innerText = yang.amount + ' Yang';
                 yEl.style.left = yang.x + 'px';
                 yEl.style.top = yang.y + 'px';
                 container.appendChild(yEl);
@@ -232,7 +246,7 @@ function runEngine() {
         }
     }
 
-    mobList.forEach(mob => {
+    mobList.forEach(function(mob) {
         if (mob.isDead || !mob.isAggressive) return;
         let dX = pPos.x - mob.x;
         let dY = pPos.y - mob.y;
@@ -242,12 +256,3 @@ function runEngine() {
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
             
             if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
-                if (Math.random() < 0.025) {
-                    pStats.hp -= 8;
-                    if (pStats.hp <= 0) {
-                        pStats.hp = pStats.maxHp;
-                        pPos = { x: 270, y: 200 }; 
-                        mobList.forEach(m => m.isAggressive = false);
-                    }
-                    drawInterface();
-                }
