@@ -1,12 +1,11 @@
 // --- OYUNCU AYARLARI VE BAŞLANGIÇ KONUMU ---
-// weaponUpgrade: Kılıcın artı seviyesi (+0'dan başlar). Base hasar 30'dur.
 let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
 let pPos = { x: 270, y: 200 }; 
 
 // --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
 let mobList = [
     { id: 1, name: "Yabani Köpek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
-    { id: 2, name: "Yabani Köpek", x: 480, y: 170, hp: 90, isDead: false, isAggressive: false }, // Demirciye çok binmesin diye Y koordinatı az indirildi
+    { id: 2, name: "Yabani Köpek", x: 480, y: 170, hp: 90, isDead: false, isAggressive: false }, 
     { id: 3, name: "Aç Yabani Köpek", x: 120, y: 320, hp: 120, isDead: false, isAggressive: false },
     { id: 4, name: "Kurt", x: 450, y: 300, hp: 150, isDead: false, isAggressive: false },
     { id: 5, name: "Aç Kurt", x: 320, y: 120, hp: 150, isDead: false, isAggressive: false }
@@ -85,13 +84,10 @@ function drawInterface() {
     let ui = document.getElementById('stats-ui');
     if (!ui) return;
     
-    // Mevcut hasarı hesapla (Temel 30 + her artı seviyesi için 10 hasar)
     let currentDamage = 30 + (pStats.weaponUpgrade * 10);
-    // Bir sonraki artı basma maliyeti hesaplama
     let cost = (pStats.weaponUpgrade + 1) * 800;
     
     let smithPrompt = "";
-    // Oyuncu demirciye yakınsa arayüzde bildirim göster
     let dX = Math.abs(pPos.x - smithPos.x);
     let dY = Math.abs(pPos.y - smithPos.y);
     if (dX < 50 && dY < 50) {
@@ -121,14 +117,13 @@ const activeKeys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = false; });
 
-// "Space" (Saldırı) ve "E" (Demirci Artı Basma) Dinleyicisi
+// "Space" (Saldırı) Ivy "E" (Demirci Artı Basma) Dinleyicisi
 window.addEventListener('keydown', (e) => {
     // --- DEMİRCİ ETKİLEŞİMİ (E TUŞU) ---
     if (e.key === 'e' || e.key === 'E') {
         let dX = Math.abs(pPos.x - smithPos.x);
         let dY = Math.abs(pPos.y - smithPos.y);
         
-        // Demirciye yakınlık kontrolü
         if (dX < 50 && dY < 50) {
             if (pStats.weaponUpgrade >= 9) {
                 spawnSmithText(smithPos.x, smithPos.y, "Maks+9!", false);
@@ -137,10 +132,9 @@ window.addEventListener('keydown', (e) => {
             
             let cost = (pStats.weaponUpgrade + 1) * 800;
             
-            // Para kontrolü
             if (pStats.yang >= cost) {
                 pStats.yang -= cost;
-                pStats.weaponUpgrade++; // Web sürümünde şimdilik %100 başarıyla geçer!
+                pStats.weaponUpgrade++; 
                 spawnSmithText(smithPos.x, smithPos.y, "Başarılı! Kılıç + " + pStats.weaponUpgrade, true);
             } else {
                 spawnSmithText(smithPos.x, smithPos.y, "Yetersiz Yang!", false);
@@ -151,7 +145,6 @@ window.addEventListener('keydown', (e) => {
 
     // --- SALDIRI MEKANİĞİ (SPACE TUŞU) ---
     if (e.key === ' ' || e.code === 'Space') {
-        // Dinamik hasarı hesapla
         let playerDamage = 30 + (pStats.weaponUpgrade * 10);
 
         mobList.forEach(mob => {
@@ -220,7 +213,7 @@ function runEngine() {
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
-    // Demirci NPC'sinin içinden geçmeyi engelleme (Katı cisim fiziği)
+    // Demirci NPC'sinin içinden geçmeyi engelleme
     let distToSmithX = Math.abs(pPos.x - smithPos.x);
     let distToSmithY = Math.abs(pPos.y - smithPos.y);
     if (distToSmithX < 35 && distToSmithY < 25) {
@@ -228,13 +221,13 @@ function runEngine() {
         pPos.y = originalY;
     }
 
-    // Gerçek zamanlı arayüz uyarısı için mesafe takibi
     if (activeKeys.w || activeKeys.a || activeKeys.s || activeKeys.d) {
         drawInterface();
     }
 
-    // Yerdeki Yang'ları Toplama Kontrolü
-    droppedYangList.forEach((yang, index) => {
+    // Yerdeki Yang'ları Toplama Kontrolü (Hata vermemesi için tersten dönüyoruz)
+    for (let i = droppedYangList.length - 1; i >= 0; i--) {
+        let yang = droppedYangList[i];
         let yEl = document.getElementById(`yang-${yang.id}`);
         
         if (!yEl) {
@@ -245,3 +238,21 @@ function runEngine() {
             yEl.style.left = yang.x + 'px';
             yEl.style.top = yang.y + 'px';
             container.appendChild(yEl);
+        }
+
+        let distX = Math.abs(pPos.x - yang.x);
+        let distY = Math.abs(pPos.y - yang.y);
+        
+        if (distX < 25 && distY < 25) {
+            pStats.yang += yang.amount;
+            yEl.remove();
+            droppedYangList.splice(i, 1);
+            drawInterface();
+        }
+    }
+
+    // Canavar Yapay Zekası
+    mobList.forEach(mob => {
+        if (mob.isDead) return;
+        if (!mob.isAggressive) return;
+
