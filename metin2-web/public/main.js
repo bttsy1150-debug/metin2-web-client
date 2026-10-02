@@ -1,9 +1,9 @@
 // --- OYUNCU AYARLARI VE BAŞLANGIÇ KONUMU ---
-let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
-let pPos = { x: 270, y: 200 }; 
+var pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
+var pPos = { x: 270, y: 200 }; 
 
 // --- 5 ADET CANAVAR LİSTESİ ---
-let mobList = [
+var mobList = [
     { id: 1, name: "Yabani Köpek", cssClass: "mob-yabani-kopek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
     { id: 2, name: "Yabani Köpek", cssClass: "mob-yabani-kopek", x: 480, y: 170, hp: 90, isDead: false, isAggressive: false }, 
     { id: 3, name: "Aç Yabani Köpek", cssClass: "mob-ac-yabani-kopek", x: 120, y: 320, hp: 120, isDead: false, isAggressive: false },
@@ -11,15 +11,15 @@ let mobList = [
     { id: 5, name: "Aç Kurt", cssClass: "mob-ac-kurt", x: 320, y: 120, hp: 150, isDead: false, isAggressive: false }
 ];
 
-const smithPos = { x: 500, y: 80 };
-let droppedYangList = [];
-let yangIdCounter = 0;
-const activeKeys = { w: false, a: false, s: false, d: false };
+var smithPos = { x: 500, y: 80 };
+var droppedYangList = [];
+var yangIdCounter = 0;
+var activeKeys = { w: false, a: false, s: false, d: false };
 
 function spawnDamageText(x, y, amount) {
-    const container = document.getElementById('game-container');
+    var container = document.getElementById('game-container');
     if (!container) return;
-    const damageEl = document.createElement('div');
+    var damageEl = document.createElement('div');
     damageEl.className = 'damage-indicator';
     damageEl.innerText = '-' + amount;
     damageEl.style.left = x + 'px';
@@ -29,9 +29,9 @@ function spawnDamageText(x, y, amount) {
 }
 
 function spawnSmithText(x, y, text, isSuccess) {
-    const container = document.getElementById('game-container');
+    var container = document.getElementById('game-container');
     if (!container) return;
-    const textEl = document.createElement('div');
+    var textEl = document.createElement('div');
     textEl.className = 'blacksmith-text';
     textEl.innerText = text;
     textEl.style.color = isSuccess ? '#00ff00' : '#ff3333';
@@ -43,7 +43,7 @@ function spawnSmithText(x, y, text, isSuccess) {
 
 function dropYang(x, y) {
     yangIdCounter++;
-    let randomAmount = Math.floor(Math.random() * 301) + 150;
+    var randomAmount = Math.floor(Math.random() * 301) + 150;
     droppedYangList.push({
         id: yangIdCounter,
         x: x + (Math.random() * 20 - 10),
@@ -53,11 +53,11 @@ function dropYang(x, y) {
 }
 
 function renderMonsters() {
-    const container = document.getElementById('game-container');
+    var container = document.getElementById('game-container');
     if (!container) return;
     
     mobList.forEach(function(mob) {
-        let mEl = document.getElementById('mob-' + mob.id);
+        var mEl = document.getElementById('mob-' + mob.id);
         if (mob.isDead) {
             if (mEl) mEl.remove();
             return;
@@ -67,7 +67,7 @@ function renderMonsters() {
             mEl.className = 'render-object enemy-monster ' + mob.cssClass;
             mEl.id = 'mob-' + mob.id;
             
-            let nTag = document.createElement('div');
+            var nTag = document.createElement('div');
             nTag.className = 'name-tag';
             nTag.innerText = '[' + mob.name + ']';
             mEl.appendChild(nTag);
@@ -80,7 +80,7 @@ function renderMonsters() {
 }
 
 function renderPlayer() {
-    const playerEl = document.getElementById('hero-player');
+    var playerEl = document.getElementById('hero-player');
     if (playerEl) {
         playerEl.style.left = pPos.x + 'px';
         playerEl.style.top = pPos.y + 'px';
@@ -88,15 +88,15 @@ function renderPlayer() {
 }
 
 function drawInterface() {
-    let ui = document.getElementById('stats-ui');
+    var ui = document.getElementById('stats-ui');
     if (!ui) return;
     
-    let currentDamage = 30 + (pStats.weaponUpgrade * 10);
-    let cost = (pStats.weaponUpgrade + 1) * 800;
+    var currentDamage = 30 + (pStats.weaponUpgrade * 10);
+    var cost = (pStats.weaponUpgrade + 1) * 800;
     
-    let smithPrompt = "";
-    let dX = Math.abs(pPos.x - smithPos.x);
-    let dY = Math.abs(pPos.y - smithPos.y);
+    var smithPrompt = "";
+    var dX = Math.abs(pPos.x - smithPos.x);
+    var dY = Math.abs(pPos.y - smithPos.y);
     if (dX < 50 && dY < 50) {
         if (pStats.weaponUpgrade >= 9) {
             smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>';
@@ -105,7 +105,7 @@ function drawInterface() {
         }
     }
 
-    let expPct = (pStats.exp / pStats.maxExp) * 100;
+    var expPct = (pStats.exp / pStats.maxExp) * 100;
     ui.innerHTML = `
         <div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:2px; text-align:center;">Metin2 Web [Lv. ${pStats.level}]</div>
         <div style="font-size:12px; color:#aaa; font-weight:bold; text-align:center; margin-bottom:4px;">Geniş Kılıç +${pStats.weaponUpgrade} (Hasar: ${currentDamage})</div>
@@ -118,23 +118,23 @@ function drawInterface() {
 }
 
 window.addEventListener('keydown', function(e) {
-    let key = e.key.toLowerCase();
+    var key = e.key.toLowerCase();
     if (activeKeys[key] !== undefined) activeKeys[key] = true;
 });
 
 window.addEventListener('keyup', function(e) {
-    let key = e.key.toLowerCase();
+    var key = e.key.toLowerCase();
     if (activeKeys[key] !== undefined) activeKeys[key] = false;
 });
 
 window.addEventListener('keydown', function(e) {
     if (e.key === 'e' || e.key === 'E') {
-        let dX = Math.abs(pPos.x - smithPos.x);
-        let dY = Math.abs(pPos.y - smithPos.y);
+        var dX = Math.abs(pPos.x - smithPos.x);
+        var dY = Math.abs(pPos.y - smithPos.y);
         
         if (dX < 50 && dY < 50) {
             if (pStats.weaponUpgrade >= 9) { spawnSmithText(smithPos.x, smithPos.y, "Maks+9!", false); return; }
-            let cost = (pStats.weaponUpgrade + 1) * 800;
+            var cost = (pStats.weaponUpgrade + 1) * 800;
             if (pStats.yang >= cost) {
                 pStats.yang -= cost; pStats.weaponUpgrade++; spawnSmithText(smithPos.x, smithPos.y, "Başarılı! Kılıç + " + pStats.weaponUpgrade, true);
             } else {
@@ -145,23 +145,14 @@ window.addEventListener('keydown', function(e) {
     }
 
     if (e.key === ' ' || e.code === 'Space') {
-        let playerDamage = 30 + (pStats.weaponUpgrade * 10);
+        var playerDamage = 30 + (pStats.weaponUpgrade * 10);
         mobList.forEach(function(mob) {
             if (mob.isDead) return;
-            let dX = Math.abs(pPos.x - mob.x);
-            let dY = Math.abs(pPos.y - mob.y);
+            var dX = Math.abs(pPos.x - mob.x);
+            var dY = Math.abs(pPos.y - mob.y);
 
             if (dX < 60 && dY < 60) {
                 mob.hp -= playerDamage; mob.isAggressive = true; spawnDamageText(mob.x, mob.y, playerDamage);
-                
-                const mEl = document.getElementById('mob-' + mob.id);
-                if (mEl) {
-                    mEl.style.filter = 'brightness(1.8) sepia(1) hue-rotate(-50deg)';
-                    setTimeout(function() { 
-                        let cEl = document.getElementById('mob-' + mob.id); 
-                        if (cEl) cEl.style.filter = 'none'; 
-                    }, 100);
-                }
                 
                 if (mob.hp <= 0) {
                     mob.isDead = true; pStats.exp += 35; dropYang(mob.x, mob.y);
@@ -179,23 +170,23 @@ window.addEventListener('keydown', function(e) {
 });
 
 function runEngine() {
-    const moveStep = 4;
-    let originalX = pPos.x; let originalY = pPos.y;
+    var moveStep = 4;
+    var originalX = pPos.x; var originalY = pPos.y;
     if (activeKeys.w && pPos.y > 15) pPos.y -= moveStep;
     if (activeKeys.s && pPos.y < 435) pPos.y += moveStep;
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
-    let distToSmithX = Math.abs(pPos.x - smithPos.x);
-    let distToSmithY = Math.abs(pPos.y - smithPos.y);
+    var distToSmithX = Math.abs(pPos.x - smithPos.x);
+    var distToSmithY = Math.abs(pPos.y - smithPos.y);
     if (distToSmithX < 35 && distToSmithY < 25) { pPos.x = originalX; pPos.y = originalY; }
     if (activeKeys.w || activeKeys.a || activeKeys.s || activeKeys.d) { drawInterface(); }
 
-    const container = document.getElementById('game-container');
+    var container = document.getElementById('game-container');
     if (container) {
-        for (let i = droppedYangList.length - 1; i >= 0; i--) {
-            let yang = droppedYangList[i];
-            let yEl = document.getElementById('yang-' + yang.id);
+        for (var i = droppedYangList.length - 1; i >= 0; i--) {
+            var yang = droppedYangList[i];
+            var yEl = document.getElementById('yang-' + yang.id);
             if (!yEl) {
                 yEl = document.createElement('div'); yEl.className = 'yang-drop'; yEl.id = 'yang-' + yang.id;
                 yEl.innerText = yang.amount + ' Yang'; yEl.style.left = yang.x + 'px'; yEl.style.top = yang.y + 'px';
@@ -223,3 +214,12 @@ function runEngine() {
     });
 
     renderPlayer(); renderMonsters();
+    requestAnimationFrame(runEngine);
+}
+
+// Bütün yükleme risklerini sıfırlayan asıl başlatıcı döngü
+window.onload = function() {
+    drawInterface();
+    renderMonsters();
+    runEngine();
+};
