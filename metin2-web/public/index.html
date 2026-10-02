@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Metin2 Web 3D Client</title>
+    <!-- Three.js kütüphanesini doğrudan yüklüyoruz -->
+    <script src="https://cloudflare.com"></script>
     <style>
         body { margin: 0; background-color: #050505; color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
         
-        /* 3D WebGL Sahnesi Ekranı Kaplayacak */
         #threejs-canvas-container {
             width: 100vw;
             height: 100vh;
@@ -16,7 +17,6 @@
             z-index: 1;
         }
 
-        /* Sol Alttaki HP / EXP / YANG Arayüz Paneli */
         #stats-ui { 
             position: absolute; 
             bottom: 20px; 
@@ -35,22 +35,12 @@
         .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; transition: width 0.1s; }
         .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; transition: width 0.1s; }
     </style>
-    
-    <!-- Kararlı ve Güvenilir Resmi Three.js Kütüphanesi -->
-    <script src="https://cloudflare.com"></script>
 </head>
 <body>
-    <!-- 3D Dünyanın Çizileceği Alan -->
     <div id="threejs-canvas-container"></div>
-    
-    <!-- Metin2 UI Paneli -->
     <div id="stats-ui">Metin2 3D Dünyası Yükleniyor...</div>
 
-    <!-- Önbellek Kilitlenmesini Önleyen Dinamik Script Bağlayıcı -->
-    <script>
-        var script = document.createElement('script');
-        script.src = 'main.js?t=' + new Date().getTime();
-        document.body.appendChild(script);
-    </script>
+    <!-- main.js dosyasını doğrudan çağırıyoruz -->
+    <script src="main.js"></script>
 </body>
 </html>
