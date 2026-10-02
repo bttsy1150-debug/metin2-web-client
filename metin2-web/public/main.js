@@ -1,25 +1,27 @@
 // --- OYUNCU AYARLARI VE BAŞLANGIÇ KONUMU ---
-// pStats içerisine başlangıç parası olarak 'yang: 0' eklendi.
-let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 0 };
-let pPos = { x: 270, y: 200 }; // Haritanın tam merkezi
+// weaponUpgrade: Kılıcın artı seviyesi (+0'dan başlar). Base hasar 30'dur.
+let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
+let pPos = { x: 270, y: 200 }; 
 
 // --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
 let mobList = [
     { id: 1, name: "Yabani Köpek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
-    { id: 2, name: "Yabani Köpek", x: 480, y: 70, hp: 90, isDead: false, isAggressive: false },
+    { id: 2, name: "Yabani Köpek", x: 480, y: 170, hp: 90, isDead: false, isAggressive: false }, // Demirciye çok binmesin diye Y koordinatı az indirildi
     { id: 3, name: "Aç Yabani Köpek", x: 120, y: 320, hp: 120, isDead: false, isAggressive: false },
     { id: 4, name: "Kurt", x: 450, y: 300, hp: 150, isDead: false, isAggressive: false },
-    { id: 5, name: "Aç Kurt", x: 320, y: 80, hp: 150, isDead: false, isAggressive: false }
+    { id: 5, name: "Aç Kurt", x: 320, y: 120, hp: 150, isDead: false, isAggressive: false }
 ];
 
-// Yerdeki Yang'ları takip eden dinamik dizi
+// Sabit Demirci Konumu
+const smithPos = { x: 500, y: 80 };
+
 let droppedYangList = [];
 let yangIdCounter = 0;
 
 const container = document.getElementById('game-container');
 const playerEl = document.getElementById('hero-player');
 
-// Dinamik Uçan Hasar Efekti Oluşturucu
+// Dinamik Efekt Oluşturucular
 function spawnDamageText(x, y, amount) {
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-indicator';
@@ -30,39 +32,37 @@ function spawnDamageText(x, y, amount) {
     setTimeout(() => { damageEl.remove(); }, 600);
 }
 
+function spawnSmithText(x, y, text, isSuccess) {
+    const textEl = document.createElement('div');
+    textEl.className = 'blacksmith-text';
+    textEl.innerText = text;
+    textEl.style.color = isSuccess ? '#00ff00' : '#ff3333';
+    textEl.style.left = x + 'px';
+    textEl.style.top = (y - 30) + 'px';
+    container.appendChild(textEl);
+    setTimeout(() => { textEl.remove(); }, 800);
+}
+
 // Canavar öldüğünde yere Yang düşüren fonksiyon
 function dropYang(x, y) {
     yangIdCounter++;
-    // Metin2 mantığına uygun olarak rastgele 150-450 arası Yang düşer
     let randomAmount = Math.floor(Math.random() * (450 - 150 + 1)) + 150;
     
     let yangObj = {
         id: yangIdCounter,
-        x: x + (Math.random() * 20 - 10), // Tam üst üste binmesin diye hafif kaydırma
+        x: x + (Math.random() * 20 - 10),
         y: y + (Math.random() * 20 - 10),
         amount: randomAmount
     };
     
     droppedYangList.push(yangObj);
-    renderYangDrops();
 }
 
-// Yerdeki Yang'ları HTML olarak ekrana basan fonksiyon
-function renderYangDrops() {
-    // Önce kaldırılmış olanları temizlemek için DOM kontrolü yapalım
-    // (runEngine içinde gerçek zamanlı güncellenecektir)
-}
-
-// Canavarları ekrana görsel olarak basan ve konumlarını güncelleyen fonksiyon
+// Canavarları ve Oyuncuyu Çizen Fonksiyonlar
 function renderMonsters() {
     mobList.forEach(mob => {
         let mEl = document.getElementById(`mob-${mob.id}`);
-
-        if (mob.isDead) {
-            if (mEl) mEl.remove();
-            return;
-        }
-
+        if (mob.isDead) { if (mEl) mEl.remove(); return; }
         if (!mEl) {
             mEl = document.createElement('div');
             mEl.className = 'render-object enemy-monster';
@@ -70,33 +70,49 @@ function renderMonsters() {
             mEl.innerText = `[${mob.name}]`;
             container.appendChild(mEl);
         }
-
         mEl.style.left = mob.x + 'px';
         mEl.style.top = mob.y + 'px';
     });
 }
 
-// Oyuncunun konumunu güncelleyen fonksiyon
 function renderPlayer() {
     playerEl.style.left = pPos.x + 'px';
     playerEl.style.top = pPos.y + 'px';
 }
 
-// Alt taraftaki HP, EXP ve YANG barlarını güncelleyen arayüz motoru
+// Geliştirilmiş Alt Arayüz Paneli
 function drawInterface() {
     let ui = document.getElementById('stats-ui');
     if (!ui) return;
     
+    // Mevcut hasarı hesapla (Temel 30 + her artı seviyesi için 10 hasar)
+    let currentDamage = 30 + (pStats.weaponUpgrade * 10);
+    // Bir sonraki artı basma maliyeti hesaplama
+    let cost = (pStats.weaponUpgrade + 1) * 800;
+    
+    let smithPrompt = "";
+    // Oyuncu demirciye yakınsa arayüzde bildirim göster
+    let dX = Math.abs(pPos.x - smithPos.x);
+    let dY = Math.abs(pPos.y - smithPos.y);
+    if (dX < 50 && dY < 50) {
+        if (pStats.weaponUpgrade >= 9) {
+            smithPrompt = `<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>`;
+        } else {
+            smithPrompt = `<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center; background:rgba(255,255,255,0.1); padding:2px; border-radius:4px;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>${cost} Yang</b></div>`;
+        }
+    }
+
     let expPct = (pStats.exp / pStats.maxExp) * 100;
     ui.innerHTML = `
-        <div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:4px; text-align:center;">Metin2 Web [Lv. ${pStats.level}]</div>
+        <div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:2px; text-align:center;">Metin2 Web [Lv. ${pStats.level}]</div>
+        <div style="font-size:12px; color:#aaa; font-weight:bold; text-align:center; margin-bottom:4px;">Geniş Kılıç +${pStats.weaponUpgrade} (Hasar: ${currentDamage})</div>
         <div style="font-size:12px; font-weight:bold; color:#ffcc00; margin-bottom:6px; text-align:center;">Yang: ${pStats.yang.toLocaleString('tr-TR')}</div>
         <div class="ui-bar"><div class="hp-fill" style="width: ${(pStats.hp / pStats.maxHp) * 100}%;">HP: ${pStats.hp}/${pStats.maxHp}</div></div>
         <div class="ui-bar"><div class="exp-fill" style="width: ${expPct}%;">EXP: %${expPct.toFixed(0)}</div></div>
-        <div style="font-size:11px; color:#ccc; text-align:center; margin-top:4px; line-height:14px;">
-            <b>WASD:</b> Haritada Özgürce Yürü<br>
-            <b>Boşluk (Space):</b> Yakındaki Slotu Kes!
+        <div style="font-size:11px; color:#ccc; text-align:center; margin-top:4px; line-height:13px;">
+            <b>WASD:</b> Yürü | <b>Space:</b> Slot Kes
         </div>
+        ${smithPrompt}
     `;
 }
 
@@ -105,9 +121,39 @@ const activeKeys = { w: false, a: false, s: false, d: false };
 window.addEventListener('keydown', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = true; });
 window.addEventListener('keyup', (e) => { if (activeKeys[e.key.toLowerCase()] !== undefined) activeKeys[e.key.toLowerCase()] = false; });
 
-// Boşluk tuşuna basıldığında en yakındaki slotu kesme mekaniği
+// "Space" (Saldırı) ve "E" (Demirci Artı Basma) Dinleyicisi
 window.addEventListener('keydown', (e) => {
+    // --- DEMİRCİ ETKİLEŞİMİ (E TUŞU) ---
+    if (e.key === 'e' || e.key === 'E') {
+        let dX = Math.abs(pPos.x - smithPos.x);
+        let dY = Math.abs(pPos.y - smithPos.y);
+        
+        // Demirciye yakınlık kontrolü
+        if (dX < 50 && dY < 50) {
+            if (pStats.weaponUpgrade >= 9) {
+                spawnSmithText(smithPos.x, smithPos.y, "Maks+9!", false);
+                return;
+            }
+            
+            let cost = (pStats.weaponUpgrade + 1) * 800;
+            
+            // Para kontrolü
+            if (pStats.yang >= cost) {
+                pStats.yang -= cost;
+                pStats.weaponUpgrade++; // Web sürümünde şimdilik %100 başarıyla geçer!
+                spawnSmithText(smithPos.x, smithPos.y, "Başarılı! Kılıç + " + pStats.weaponUpgrade, true);
+            } else {
+                spawnSmithText(smithPos.x, smithPos.y, "Yetersiz Yang!", false);
+            }
+            drawInterface();
+        }
+    }
+
+    // --- SALDIRI MEKANİĞİ (SPACE TUŞU) ---
     if (e.key === ' ' || e.code === 'Space') {
+        // Dinamik hasarı hesapla
+        let playerDamage = 30 + (pStats.weaponUpgrade * 10);
+
         mobList.forEach(mob => {
             if (mob.isDead) return;
 
@@ -115,10 +161,10 @@ window.addEventListener('keydown', (e) => {
             let dY = Math.abs(pPos.y - mob.y);
 
             if (dX < 60 && dY < 60) {
-                mob.hp -= 30;
+                mob.hp -= playerDamage;
                 mob.isAggressive = true; 
                 
-                spawnDamageText(mob.x, mob.y, 30);
+                spawnDamageText(mob.x, mob.y, playerDamage);
                 
                 const mEl = document.getElementById(`mob-${mob.id}`);
                 if (mEl) {
@@ -133,7 +179,6 @@ window.addEventListener('keydown', (e) => {
                     mob.isDead = true;
                     pStats.exp += 35;
                     
-                    // Ölen canavarın tam koordinatına Yang düşürülüyor
                     dropYang(mob.x, mob.y);
                     
                     if (pStats.exp >= pStats.maxExp) {
@@ -164,15 +209,31 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// Kesintisiz Oyun Motoru Döngüsü
+// Oyun Motoru Ana Döngüsü
 function runEngine() {
     const moveStep = 4;
+    let originalX = pPos.x;
+    let originalY = pPos.y;
+
     if (activeKeys.w && pPos.y > 15) pPos.y -= moveStep;
     if (activeKeys.s && pPos.y < 435) pPos.y += moveStep;
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
-    // Yerdeki Yang'ları Toplama Kontrolü (Üzerinden geçince otomatik toplar)
+    // Demirci NPC'sinin içinden geçmeyi engelleme (Katı cisim fiziği)
+    let distToSmithX = Math.abs(pPos.x - smithPos.x);
+    let distToSmithY = Math.abs(pPos.y - smithPos.y);
+    if (distToSmithX < 35 && distToSmithY < 25) {
+        pPos.x = originalX;
+        pPos.y = originalY;
+    }
+
+    // Gerçek zamanlı arayüz uyarısı için mesafe takibi
+    if (activeKeys.w || activeKeys.a || activeKeys.s || activeKeys.d) {
+        drawInterface();
+    }
+
+    // Yerdeki Yang'ları Toplama Kontrolü
     droppedYangList.forEach((yang, index) => {
         let yEl = document.getElementById(`yang-${yang.id}`);
         
@@ -184,52 +245,3 @@ function runEngine() {
             yEl.style.left = yang.x + 'px';
             yEl.style.top = yang.y + 'px';
             container.appendChild(yEl);
-        }
-
-        // Oyuncu ile Yang arasındaki mesafe kontrolü
-        let distX = Math.abs(pPos.x - yang.x);
-        let distY = Math.abs(pPos.y - yang.y);
-        
-        if (distX < 25 && distY < 25) {
-            pStats.yang += yang.amount; // Cüzdana ekle
-            yEl.remove(); // Ekrandan sil
-            droppedYangList.splice(index, 1); // Listeden temizle
-            drawInterface(); // Arayüzü güncelle
-        }
-    });
-
-    // Canavar Yapay Zekası
-    mobList.forEach(mob => {
-        if (mob.isDead) return;
-        if (!mob.isAggressive) return;
-
-        let dX = pPos.x - mob.x;
-        let dY = pPos.y - mob.y;
-
-        if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
-            if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
-            if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
-            
-            if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
-                if (Math.random() < 0.025) {
-                    pStats.hp -= 8;
-                    if (pStats.hp <= 0) {
-                        pStats.hp = pStats.maxHp;
-                        pPos = { x: 270, y: 200 }; 
-                        mobList.forEach(m => m.isAggressive = false);
-                    }
-                    drawInterface();
-                }
-            }
-        }
-    });
-
-    renderPlayer();
-    renderMonsters();
-    requestAnimationFrame(runEngine);
-}
-
-// İlk tetiklemeyi başlat
-drawInterface();
-renderMonsters();
-runEngine();
