@@ -6,7 +6,7 @@
     <style>
         body { margin: 0; background-color: #222; color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
         
-        /* Çakışan position hatası düzeltildi. Harita artık tam ortada duracak */
+        /* Harita Kapsayıcısı */
         #game-container { 
             position: absolute; 
             top: 50%; 
@@ -21,6 +21,7 @@
             overflow: hidden;
         }
         
+        /* Genel Dinamik Element Stili */
         .render-object { 
             position: absolute; 
             padding: 6px 12px; 
@@ -29,12 +30,17 @@
             font-size: 13px; 
             text-shadow: 1px 1px 2px #000; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
-            transform: translate(-50%, -50%); /* Karakterlerin ayak bastığı noktayı merkeze alır */
+            transform: translate(-50%, -50%); 
+            white-space: nowrap; /* Canavar isimlerinin kırılmasını engeller */
         }
         
+        /* Oyuncu Savaşçı */
         #hero-player { background-color: #0000ff; border: 2px solid #fff; z-index: 10; color: white; }
+        
+        /* Canavarlar (Slotlar) */
         .enemy-monster { background-color: #8b0000; border: 2px solid #ff0000; color: #ffcccc; transition: background-color 0.05s; }
         
+        /* Sol Alttaki HP / EXP Arayüzü */
         #stats-ui { 
             position: absolute; 
             bottom: 15px; 
@@ -50,6 +56,31 @@
         .ui-bar { width: 100%; background: #444; border: 1px solid #000; padding:1px; margin-bottom:6px; border-radius:2px; overflow:hidden; }
         .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; transition: width 0.1s; }
         .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; transition: width 0.1s; }
+
+        /* Uçan Hasar Rakamı Stili */
+        .damage-indicator {
+            position: absolute;
+            color: #ff0000; /* Metin2 Hasar Kırmızısı */
+            font-family: 'Arial Black', sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0px #000; /* Siyah dış hat konturu */
+            z-index: 100;
+            pointer-events: none; /* Tıklamaları engeller */
+            animation: floatUpAndFade 0.6s ease-out forwards; /* 0.6 saniyede animasyonu tamamlar */
+        }
+
+        /* Yukarı Doğru Uçma ve Şeffaflaşma Animasyonu */
+        @keyframes floatUpAndFade {
+            0% {
+                transform: translate(-50%, -50%) translateY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) translateY(-40px); /* Kafasından 40px yukarı süzülür */
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
