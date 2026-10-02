@@ -31,7 +31,7 @@
             text-shadow: 1px 1px 2px #000; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
             transform: translate(-50%, -50%); 
-            white-space: nowrap; /* İsimlerin kırılmasını önler */
+            white-space: nowrap;
         }
         
         /* Oyuncu Savaşçı */
@@ -40,6 +40,15 @@
         /* Canavarlar (Slotlar) */
         .enemy-monster { background-color: #8b0000; border: 2px solid #ff0000; color: #ffcccc; transition: background-color 0.05s; }
         
+        /* Demirci / Silah Satıcısı NPC Stili */
+        .npc-blacksmith { 
+            background-color: #555555; 
+            border: 2px solid #aaaaaa; 
+            color: #ffffff; 
+            z-index: 8;
+            box-shadow: 0 0 12px rgba(255,255,255,0.3);
+        }
+
         /* Sol Alttaki HP / EXP / YANG Arayüz Paneli */
         #stats-ui { 
             position: absolute; 
@@ -60,43 +69,50 @@
         /* Uçan Hasar Rakamı Stili */
         .damage-indicator {
             position: absolute;
-            color: #ff0000; /* Metin2 Hasar Kırmızısı */
+            color: #ff0000; 
             font-family: 'Arial Black', sans-serif;
             font-size: 18px;
             font-weight: bold;
-            text-shadow: 2px 2px 0px #000; /* Belirgin dış kontur */
+            text-shadow: 2px 2px 0px #000; 
             z-index: 100;
             pointer-events: none;
             animation: floatUpAndFade 0.6s ease-out forwards;
         }
 
+        /* Demirci Bildirim Yazıları Stili (Örn: "Yükseltme Başarılı!") */
+        .blacksmith-text {
+            position: absolute;
+            color: #00ff00;
+            font-family: 'Tahoma', sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            z-index: 110;
+            pointer-events: none;
+            animation: floatUpAndFade 0.8s ease-out forwards;
+        }
+
         /* Yere Düşen Altın (Yang) Kesesi Tasarımı */
         .yang-drop {
             position: absolute;
-            background-color: #ffcc00; /* Parlak altın sarısı */
+            background-color: #ffcc00; 
             color: #332200;
             font-family: 'Tahoma', sans-serif;
             font-size: 11px;
             font-weight: bold;
             padding: 2px 6px;
             border: 1px solid #cca100;
-            border-radius: 10px; /* Yuvarlak kese formu */
-            box-shadow: 0 0 10px #ffcc00, inset 0 0 4px #ffffff; /* Dışa doğru parlama efekti */
+            border-radius: 10px; 
+            box-shadow: 0 0 10px #ffcc00, inset 0 0 4px #ffffff; 
             z-index: 5;
             transform: translate(-50%, -50%);
-            pointer-events: none; /* Karakterin üzerinden geçerek toplaması için tıklamayı kapatır */
+            pointer-events: none; 
         }
 
-        /* Hasar Rakamlarının Yukarı Süzülme Animasyonu */
+        /* Animasyon */
         @keyframes floatUpAndFade {
-            0% {
-                transform: translate(-50%, -50%) translateY(0);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(-50%, -50%) translateY(-40px);
-                opacity: 0;
-            }
+            0% { transform: translate(-50%, -50%) translateY(0); opacity: 1; }
+            100% { transform: translate(-50%, -50%) translateY(-40px); opacity: 0; }
         }
     </style>
 </head>
@@ -104,6 +120,9 @@
     <div id="game-container">
         <!-- Oyuncu Karakteri -->
         <div id="hero-player" class="render-object">[Savaşçı]</div>
+        
+        <!-- Demirci NPC'si (Haritanın Sağ Üstünde Sabit) -->
+        <div id="npc-smith" class="render-object npc-blacksmith" style="left: 500px; top: 80px;">[Demirci]</div>
     </div>
     <div id="stats-ui">Metin2 Yükleniyor...</div>
     <script src="main.js"></script>
