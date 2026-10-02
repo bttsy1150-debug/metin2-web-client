@@ -1,5 +1,6 @@
 // --- OYUNCU AYARLARI VE BAŞLANGIÇ KONUMU ---
-let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100 };
+// pStats içerisine başlangıç parası olarak 'yang: 0' eklendi.
+let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 0 };
 let pPos = { x: 270, y: 200 }; // Haritanın tam merkezi
 
 // --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
@@ -11,6 +12,10 @@ let mobList = [
     { id: 5, name: "Aç Kurt", x: 320, y: 80, hp: 150, isDead: false, isAggressive: false }
 ];
 
+// Yerdeki Yang'ları takip eden dinamik dizi
+let droppedYangList = [];
+let yangIdCounter = 0;
+
 const container = document.getElementById('game-container');
 const playerEl = document.getElementById('hero-player');
 
@@ -19,17 +24,33 @@ function spawnDamageText(x, y, amount) {
     const damageEl = document.createElement('div');
     damageEl.className = 'damage-indicator';
     damageEl.innerText = `-${amount}`;
-    
-    // Canavarın kafasının biraz üzerinde çıkması için Y koordinatını 25px yukarı alıyoruz
     damageEl.style.left = x + 'px';
     damageEl.style.top = (y - 25) + 'px';
-    
     container.appendChild(damageEl);
+    setTimeout(() => { damageEl.remove(); }, 600);
+}
+
+// Canavar öldüğünde yere Yang düşüren fonksiyon
+function dropYang(x, y) {
+    yangIdCounter++;
+    // Metin2 mantığına uygun olarak rastgele 150-450 arası Yang düşer
+    let randomAmount = Math.floor(Math.random() * (450 - 150 + 1)) + 150;
     
-    // Animasyon bittiğinde elementi DOM'dan temizle
-    setTimeout(() => {
-        damageEl.remove();
-    }, 600);
+    let yangObj = {
+        id: yangIdCounter,
+        x: x + (Math.random() * 20 - 10), // Tam üst üste binmesin diye hafif kaydırma
+        y: y + (Math.random() * 20 - 10),
+        amount: randomAmount
+    };
+    
+    droppedYangList.push(yangObj);
+    renderYangDrops();
+}
+
+// Yerdeki Yang'ları HTML olarak ekrana basan fonksiyon
+function renderYangDrops() {
+    // Önce kaldırılmış olanları temizlemek için DOM kontrolü yapalım
+    // (runEngine içinde gerçek zamanlı güncellenecektir)
 }
 
 // Canavarları ekrana görsel olarak basan ve konumlarını güncelleyen fonksiyon
@@ -61,14 +82,15 @@ function renderPlayer() {
     playerEl.style.top = pPos.y + 'px';
 }
 
-// Alt taraftaki HP ve EXP barlarını güncelleyen arayüz motoru
+// Alt taraftaki HP, EXP ve YANG barlarını güncelleyen arayüz motoru
 function drawInterface() {
     let ui = document.getElementById('stats-ui');
     if (!ui) return;
     
     let expPct = (pStats.exp / pStats.maxExp) * 100;
     ui.innerHTML = `
-        <div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:6px; text-align:center;">Metin2 Web [Lv. ${pStats.level}]</div>
+        <div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:4px; text-align:center;">Metin2 Web [Lv. ${pStats.level}]</div>
+        <div style="font-size:12px; font-weight:bold; color:#ffcc00; margin-bottom:6px; text-align:center;">Yang: ${pStats.yang.toLocaleString('tr-TR')}</div>
         <div class="ui-bar"><div class="hp-fill" style="width: ${(pStats.hp / pStats.maxHp) * 100}%;">HP: ${pStats.hp}/${pStats.maxHp}</div></div>
         <div class="ui-bar"><div class="exp-fill" style="width: ${expPct}%;">EXP: %${expPct.toFixed(0)}</div></div>
         <div style="font-size:11px; color:#ccc; text-align:center; margin-top:4px; line-height:14px;">
@@ -92,15 +114,12 @@ window.addEventListener('keydown', (e) => {
             let dX = Math.abs(pPos.x - mob.x);
             let dY = Math.abs(pPos.y - mob.y);
 
-            // Saldırı mesafesi kontrolü
             if (dX < 60 && dY < 60) {
                 mob.hp -= 30;
                 mob.isAggressive = true; 
                 
-                // Uçan Hasar Rakamını Tetikle
                 spawnDamageText(mob.x, mob.y, 30);
                 
-                // Vurulma efekti
                 const mEl = document.getElementById(`mob-${mob.id}`);
                 if (mEl) {
                     mEl.style.backgroundColor = '#ffffff';
@@ -110,19 +129,17 @@ window.addEventListener('keydown', (e) => {
                     }, 80);
                 }
 
-                // Ölüm Kontrolü ve Yeniden Doğma (Respawn) Sistemi
                 if (mob.hp <= 0) {
                     mob.isDead = true;
                     pStats.exp += 35;
                     
+                    // Ölen canavarın tam koordinatına Yang düşürülüyor
+                    dropYang(mob.x, mob.y);
+                    
                     if (pStats.exp >= pStats.maxExp) {
-                        pStats.level++; 
-                        pStats.exp = 0; 
-                        pStats.maxHp += 100; 
-                        pStats.hp = pStats.maxHp;
+                        pStats.level++; pStats.exp = 0; pStats.maxHp += 100; pStats.hp = pStats.maxHp;
                     }
 
-                    // 5 Saniye sonra canavarı rastgele konumda ve pasif olarak dirilt
                     setTimeout(() => {
                         mob.x = Math.floor(Math.random() * (570 - 30 + 1)) + 30;
                         mob.y = Math.floor(Math.random() * (420 - 30 + 1)) + 30;
@@ -155,6 +172,32 @@ function runEngine() {
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
+    // Yerdeki Yang'ları Toplama Kontrolü (Üzerinden geçince otomatik toplar)
+    droppedYangList.forEach((yang, index) => {
+        let yEl = document.getElementById(`yang-${yang.id}`);
+        
+        if (!yEl) {
+            yEl = document.createElement('div');
+            yEl.className = 'yang-drop';
+            yEl.id = `yang-${yang.id}`;
+            yEl.innerText = `${yang.amount} Yang`;
+            yEl.style.left = yang.x + 'px';
+            yEl.style.top = yang.y + 'px';
+            container.appendChild(yEl);
+        }
+
+        // Oyuncu ile Yang arasındaki mesafe kontrolü
+        let distX = Math.abs(pPos.x - yang.x);
+        let distY = Math.abs(pPos.y - yang.y);
+        
+        if (distX < 25 && distY < 25) {
+            pStats.yang += yang.amount; // Cüzdana ekle
+            yEl.remove(); // Ekrandan sil
+            droppedYangList.splice(index, 1); // Listeden temizle
+            drawInterface(); // Arayüzü güncelle
+        }
+    });
+
     // Canavar Yapay Zekası
     mobList.forEach(mob => {
         if (mob.isDead) return;
@@ -167,7 +210,6 @@ function runEngine() {
             if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
             
-            // Oyuncuya hasar vurma mekaniği
             if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
                 if (Math.random() < 0.025) {
                     pStats.hp -= 8;
