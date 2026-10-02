@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Metin2 Web Client - Gerçek Grafik Sürümü</title>
+    <title>Metin2 Web Client - Kesin Çözüm</title>
     <style>
         body { margin: 0; background-color: #111; color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
         #canvas-container { position: relative; width: 600px; height: 450px; border: 4px solid #444; border-radius: 8px; box-shadow: 0 0 25px rgba(0,0,0,0.8); }
@@ -16,14 +16,14 @@
 <body>
     <div id="canvas-container">
         <canvas id="gameCanvas" width="600" height="450"></canvas>
-        <div id="stats-ui">Metin2 Grafikleri Yükleniyor...</div>
+        <div id="stats-ui">Metin2 Yükleniyor...</div>
     </div>
 
     <script>
         var canvas = document.getElementById("gameCanvas");
         var ctx = canvas.getContext("2d");
 
-        // --- GÖRSELLERİ ÖNCEDEN BELLEĞE YÜKLEME ---
+        // --- GÖRSELLERİ ARKA PLANDA SERBEST YÜKLEME ---
         var imgs = {};
         var srcList = {
             hero: 'image_v24_-c.png',
@@ -34,7 +34,7 @@
             ac_kurt: 'image_-RgfPm.png'
         };
 
-        // Resimleri arka planda hazırla (Yüklenmezse hata vermez, kutu çizer)
+        // Oyunun başlamasını engellememesi için onload bekleme şartını kaldırdık
         Object.keys(srcList).forEach(function(key) {
             imgs[key] = new Image();
             imgs[key].src = srcList[key];
@@ -66,7 +66,7 @@
             
             if (Math.abs(pPos.x - smithPos.x) < 50 && Math.abs(pPos.y - smithPos.y) < 50) {
                 if (pStats.weaponUpgrade >= 9) {
-                    smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>';
+                    smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum!]</b></div>';
                 } else {
                     smithPrompt = '<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>' + cost + ' Yang</b></div>';
                 }
@@ -150,14 +150,11 @@
                 }
             });
 
-            // --- CANVAS RENDER ---
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Çimen arka planı (Koyu Yeşil Metin2 Rengi)
             ctx.fillStyle = "#2c421e"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. DEMİRCİ ÇİZİMİ
-            if (imgs.smith.complete && imgs.smith.naturalWidth !== 0) {
+            // 1. DEMİRCİ RENDER
+            if (imgs.smith && imgs.smith.complete && imgs.smith.naturalWidth !== 0) {
                 ctx.drawImage(imgs.smith, smithPos.x - 25, smithPos.y - 30, 50, 60);
             } else {
                 ctx.fillStyle = "#555555"; ctx.fillRect(smithPos.x - 15, smithPos.y - 20, 30, 40);
@@ -165,7 +162,7 @@
             ctx.fillStyle = "#ffcc00"; ctx.font = "bold 11px Tahoma"; ctx.textAlign = "center";
             ctx.fillText("[Demirci]", smithPos.x, smithPos.y - 35);
 
-            // 2. CANAVARLAR ÇİZİMİ
+            // 2. CANAVARLAR RENDER
             mobList.forEach(function(mob) {
                 if (mob.isDead) return;
                 var mImg = imgs[mob.type];
@@ -174,3 +171,4 @@
                 } else {
                     ctx.fillStyle = "#8b0000"; ctx.fillRect(mob.x - 12, mob.y - 12, 24, 24);
                 }
+                ctx.fillStyle = "#ff5555"; ctx.font = "bold 11px Tahoma"; ctx.textAlign = "center";
