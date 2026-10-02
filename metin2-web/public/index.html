@@ -3,94 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Metin2 Web 3D Client</title>
-    <!-- Tarayıcının kütüphaneyi önbelleğe almadan doğrudan çekmesini sağlıyoruz -->
+    <!-- Three.js Kütüphanesi -->
     <script src="https://cloudflare.com"></script>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #050505; color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
-        
-        /* 3D Tuval alanı - Tüm ekranı kaplayacak şekilde en arkaya veya en öne esnetildi */
-        #threejs-canvas-container {
-            width: 100vw;
-            height: 100vh;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 5; /* 3D Sahnenin görünmesini garanti altına alan öncelik değeri */
-        }
-
-        /* Sol Alttaki HP / EXP / YANG Arayüz Paneli */
-        #stats-ui { 
-            position: absolute; 
-            bottom: 20px; 
-            left: 20px; 
-            background: rgba(0, 0, 0, 0.85); 
-            padding: 14px; 
-            border-radius: 8px; 
-            border: 2px solid #555; 
-            width: 250px; 
-            z-index: 200; /* Arayüz paneli her zaman 3D dünyasının üstünde kalmalı */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            pointer-events: auto;
-        }
-        
+        #threejs-canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 5; }
+        #stats-ui { position: absolute; bottom: 20px; left: 20px; background: rgba(0, 0, 0, 0.85); padding: 14px; border-radius: 8px; border: 2px solid #555; width: 250px; z-index: 200; box-shadow: 0 4px 15px rgba(0,0,0,0.6); pointer-events: auto; }
         .ui-bar { width: 100%; background: #333; border: 1px solid #000; padding:1px; margin-bottom:6px; border-radius:2px; overflow:hidden; }
         .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; transition: width 0.1s; }
         .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; transition: width 0.1s; }
-
-        /* CSS Uçan Efektler İçin Animasyon Sınıfları */
-        .damage-indicator {
-            position: absolute;
-            color: #ff3333;
-            font-family: 'Arial Black', sans-serif;
-            font-size: 26px;
-            font-weight: bold;
-            text-shadow: 2px 2px #000;
-            z-index: 300;
-            pointer-events: none;
-            animation: floatUpAndFade 0.6s ease-out forwards;
-        }
-        
-        .blacksmith-text {
-            position: absolute;
-            font-family: 'Tahoma', sans-serif;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 1px 1px #000;
-            z-index: 310;
-            pointer-events: none;
-            animation: floatUpAndFade 0.8s ease-out forwards;
-        }
-
-        @keyframes floatUpAndFade {
-            0% { transform: translate(-50%, -50%) translateY(0); opacity: 1; }
-            100% { transform: translate(-50%, -50%) translateY(-50px); opacity: 0; }
-        }
+        .damage-indicator { position: absolute; color: #ff3333; font-family: 'Arial Black', sans-serif; font-size: 26px; font-weight: bold; text-shadow: 2px 2px #000; z-index: 300; pointer-events: none; animation: floatUpAndFade 0.6s ease-out forwards; }
+        .blacksmith-text { position: absolute; font-family: 'Tahoma', sans-serif; font-size: 20px; font-weight: bold; text-shadow: 1px 1px #000; z-index: 310; pointer-events: none; animation: floatUpAndFade 0.8s ease-out forwards; }
+        @keyframes floatUpAndFade { 0% { transform: translate(-50%, -50%) translateY(0); opacity: 1; } 100% { transform: translate(-50%, -50%) translateY(-50px); opacity: 0; } }
     </style>
 </head>
 <body>
-    <!-- 3D Sahne Alanı -->
     <div id="threejs-canvas-container"></div>
-    
-    <!-- Metin2 UI Paneli -->
     <div id="stats-ui">Metin2 3D Dünyası Yükleniyor...</div>
 
     <script>
-        // --- OYUN AYARLARI VE GLOBAL DEĞİŞKENLER ---
+        // --- OYUN AYARLARI ---
         var pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
         var scene, camera, renderer;
         var playerMesh, smithMesh;
         var activeKeys = { w: false, a: false, s: false, d: false };
 
         var mobList = [
-            { id: 1, name: "Yabani Köpek", x: -15, z: -15, hp: 90, isDead: false, isAggressive: false, mesh: null },
-            { id: 2, name: "Yabani Köpek", x: 15, z: -10, hp: 90, isDead: false, isAggressive: false, mesh: null },
-            { id: 3, name: "Aç Yabani Köpek", x: -10, z: 15, hp: 120, isDead: false, isAggressive: false, mesh: null },
-            { id: 4, name: "Kurt", x: 10, z: 10, hp: 150, isDead: false, isAggressive: false, mesh: null },
-            { id: 5, name: "Aç Kurt", x: 0, z: -18, hp: 150, isDead: false, isAggressive: false, mesh: null }
+            { id: 1, name: "Yabani Köpek", x: -50, z: -50, hp: 90, isDead: false, isAggressive: false, mesh: null },
+            { id: 2, name: "Yabani Köpek", x: 50, z: -30, hp: 90, isDead: false, isAggressive: false, mesh: null },
+            { id: 3, name: "Aç Yabani Köpek", x: -30, z: 50, hp: 120, isDead: false, isAggressive: false, mesh: null },
+            { id: 4, name: "Kurt", x: 30, z: 30, hp: 150, isDead: false, isAggressive: false, mesh: null },
+            { id: 5, name: "Aç Kurt", x: 0, z: -60, hp: 150, isDead: false, isAggressive: false, mesh: null }
         ];
 
-        var smithPos = { x: 18, z: -15 };
+        var smithPos = { x: 40, z: -40 };
         var droppedYangList = [];
         var yangIdCounter = 0;
 
@@ -122,47 +69,42 @@
             if (!container) return;
 
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a2414); // Metin2 Koyu Yeşil Arka Plan
+            scene.background = new THREE.Color(0x2c421e); // Haritayı doğrudan arka plan rengi yapıyoruz (Asla siyah kalmaz)
 
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+            // Kamerayı daha geniş ve yakından görecek şekilde optimize ettik
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
             
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            var ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
-            var directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight.position.set(10, 25, 15);
-            scene.add(directionalLight);
-
-            // Zemin Tanımlaması
-            var floorGeo = new THREE.PlaneGeometry(80, 80);
-            var floorMat = new THREE.MeshStandardMaterial({ color: 0x2c421e, roughness: 0.9 });
+            // Devasa Zemin
+            var floorGeo = new THREE.PlaneGeometry(300, 300);
+            var floorMat = new THREE.MeshBasicMaterial({ color: 0x3d5427 }); // Işık istemeyen temel kaplama
             var floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             scene.add(floor);
 
-            // Savaşçı Karakteri (Mavi Dikdörtgen Kutu)
-            var playerGeo = new THREE.BoxGeometry(1.6, 2.2, 1.6);
-            var playerMat = new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.4 });
+            // Savaşçı Karakteri (Büyük Boyutlu Mavi Kutu)
+            var playerGeo = new THREE.BoxGeometry(5, 5, 5);
+            var playerMat = new THREE.MeshBasicMaterial({ color: 0x0000ff });
             playerMesh = new THREE.Mesh(playerGeo, playerMat);
-            playerMesh.position.set(0, 1.1, 0);
+            playerMesh.position.set(0, 2.5, 0);
             scene.add(playerMesh);
 
-            // Demirci NPC (Gri Dikdörtgen Kutu)
-            var smithGeo = new THREE.BoxGeometry(2.2, 2.8, 2.2);
-            var smithMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.4 });
+            // Demirci NPC (Büyük Boyutlu Gri Kutu)
+            var smithGeo = new THREE.BoxGeometry(6, 8, 6);
+            var smithMat = new THREE.MeshBasicMaterial({ color: 0x555555 });
             smithMesh = new THREE.Mesh(smithGeo, smithMat);
-            smithMesh.position.set(smithPos.x, 1.4, smithPos.z);
+            smithMesh.position.set(smithPos.x, 4, smithPos.z);
             scene.add(smithMesh);
 
-            // Canavarlar
+            // Canavarlar (Büyük Boyutlu Kırmızı Kutular)
             mobList.forEach(function(mob) {
-                var mobGeo = new THREE.BoxGeometry(1.6, 1.6, 1.6);
-                var mobMat = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.4 });
+                var mobGeo = new THREE.BoxGeometry(5, 5, 5);
+                var mobMat = new THREE.MeshBasicMaterial({ color: 0x8b0000 });
                 var mMesh = new THREE.Mesh(mobGeo, mobMat);
-                mMesh.position.set(mob.x, 0.8, mob.z);
+                mMesh.position.set(mob.x, 2.5, mob.z);
                 scene.add(mMesh);
                 mob.mesh = mMesh;
             });
@@ -171,10 +113,8 @@
             window.addEventListener('keyup', onKeyUp);
             window.addEventListener('resize', onWindowResize);
 
-            // Kamera Takip Açı Başlangıcı
-            camera.position.x = playerMesh.position.x;
-            camera.position.y = playerMesh.position.y + 18;
-            camera.position.z = playerMesh.position.z + 20;
+            // Metin2 TPS Kamera Kilitlemesi
+            camera.position.set(playerMesh.position.x, playerMesh.position.y + 40, playerMesh.position.z + 50);
             camera.lookAt(playerMesh.position);
 
             drawInterface();
@@ -186,7 +126,7 @@
 
             if (!playerMesh || !scene || !camera || !renderer) return;
 
-            var moveSpeed = 0.18;
+            var moveSpeed = 0.8; // Hızlı ve akıcı hareket
             var prevX = playerMesh.position.x;
             var prevZ = playerMesh.position.z;
 
@@ -195,12 +135,12 @@
             if (activeKeys.a) playerMesh.position.x -= moveSpeed;
             if (activeKeys.d) playerMesh.position.x += moveSpeed;
 
-            if (playerMesh.position.x < -38 || playerMesh.position.x > 38) playerMesh.position.x = prevX;
-            if (playerMesh.position.z < -38 || playerMesh.position.z > 38) playerMesh.position.z = prevZ;
+            if (playerMesh.position.x < -140 || playerMesh.position.x > 140) playerMesh.position.x = prevX;
+            if (playerMesh.position.z < -140 || playerMesh.position.z > 140) playerMesh.position.z = prevZ;
 
             if (smithMesh) {
                 var distToSmith = playerMesh.position.distanceTo(smithMesh.position);
-                if (distToSmith < 2.5) {
+                if (distToSmith < 8) {
                     playerMesh.position.x = prevX;
                     playerMesh.position.z = prevZ;
                 }
@@ -211,20 +151,48 @@
 
                 var dist = mob.mesh.position.distanceTo(playerMesh.position);
                 
-                if (dist < 18) {
+                if (dist < 40) {
                     var dirX = playerMesh.position.x - mob.mesh.position.x;
                     var dirZ = playerMesh.position.z - mob.mesh.position.z;
                     
-                    mob.mesh.position.x += (dirX / dist) * 0.06;
-                    mob.mesh.position.z += (dirZ / dist) * 0.06;
+                    mob.mesh.position.x += (dirX / dist) * 0.3;
+                    mob.mesh.position.z += (dirZ / dist) * 0.3;
 
-                    if (dist < 2.0) {
+                    if (dist < 6.0) {
                         if (Math.random() < 0.025) {
                             pStats.hp -= 8;
                             if (pStats.hp <= 0) {
                                 pStats.hp = pStats.maxHp;
-                                playerMesh.position.set(0, 1.1, 0);
+                                playerMesh.position.set(0, 2.5, 0);
                                 mobList.forEach(function(m) { m.isAggressive = false; });
                             }
                             drawInterface();
                         }
+                    }
+                }
+            });
+
+            // Kamerayı oyuncuya tamamen kelepçeliyoruz
+            camera.position.set(playerMesh.position.x, playerMesh.position.y + 40, playerMesh.position.z + 50);
+            camera.lookAt(playerMesh.position);
+
+            renderer.render(scene, camera);
+        }
+
+        function onKeyDown(e) {
+            var key = e.key.toLowerCase();
+            if (activeKeys[key] !== undefined) activeKeys[key] = true;
+            if (key === 'w' || key === 'a' || key === 's' || key === 'd') drawInterface();
+
+            if (key === 'e') {
+                if (!playerMesh || !smithMesh) return;
+                var dist = playerMesh.position.distanceTo(smithMesh.position);
+                if (dist < 12.0) {
+                    if (pStats.weaponUpgrade >= 9) return;
+                    var cost = (pStats.weaponUpgrade + 1) * 800;
+                    if (pStats.yang >= cost) {
+                        pStats.yang -= cost;
+                        pStats.weaponUpgrade++;
+                        spawnSmithText("Başarılı! Kılıç +" + pStats.weaponUpgrade, true);
+                    } else {
+                        spawnSmithText("Yetersiz Yang!", false);
