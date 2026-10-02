@@ -2,12 +2,12 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Metin2 Web Client - Kesin Çözüm</title>
+    <title>Metin2 Web Client</title>
     <style>
         body { margin: 0; background-color: #111; color: white; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
         #canvas-container { position: relative; width: 600px; height: 450px; border: 4px solid #444; border-radius: 8px; box-shadow: 0 0 25px rgba(0,0,0,0.8); }
         canvas { background-color: #2c421e; display: block; }
-        #stats-ui { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 6px; border: 2px solid #555; width: 240px; z-index: 200; font-size: 13px; text-shadow: 1px 1px 1px #000; }
+        #stats-ui { position: absolute; bottom: 15px; left: 15px; background: rgba(0,0,0,0.85); padding: 12px; border-radius: 6px; border: 2px solid #555; width: 240px; z-index: 200; font-size: 13px; }
         .ui-bar { width: 100%; background: #444; border: 1px solid #000; padding:1px; margin-bottom:6px; border-radius:2px; overflow:hidden; }
         .hp-fill { background: #ff0000; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:white; }
         .exp-fill { background: #00ffcc; height: 14px; text-align:center; font-size:10px; line-height:14px; font-weight:bold; color:black; }
@@ -23,38 +23,10 @@
         var canvas = document.getElementById("gameCanvas");
         var ctx = canvas.getContext("2d");
 
-        // --- GÖRSELLERİ ARKA PLANDA SERBEST YÜKLEME ---
-        var imgs = {};
-        var srcList = {
-            hero: 'image_v24_-c.png',
-            smith: 'image_JRqo63.png',
-            yabani_kopek: 'image_Wc8LTA.png',
-            ac_yabani_kopek: 'image_B2Bglw.png',
-            kurt: 'image_eMPP7C.png',
-            ac_kurt: 'image_-RgfPm.png'
-        };
-
-        Object.keys(srcList).forEach(function(key) {
-            imgs[key] = new Image();
-            imgs[key].src = srcList[key];
-        });
-
-        // --- OYUNCU VE DÜNYA AYARLARI ---
         var pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
         var pPos = { x: 270, y: 220 };
         var activeKeys = { w: false, a: false, s: false, d: false };
-
         var smithPos = { x: 500, y: 80 };
-        var mobList = [
-            { id: 1, name: "Yabani Köpek", type: "yabani_kopek", x: 80, y: 80, hp: 90, isDead: false, isAggressive: false },
-            { id: 2, name: "Yabani Köpek", type: "yabani_kopek", x: 450, y: 140, hp: 90, isDead: false, isAggressive: false }, 
-            { id: 3, name: "Aç Yabani Köpek", type: "ac_yabani_kopek", x: 120, y: 350, hp: 120, isDead: false, isAggressive: false },
-            { id: 4, name: "Kurt", type: "kurt", x: 480, y: 320, hp: 150, isDead: false, isAggressive: false },
-            { id: 5, name: "Aç Kurt", type: "ac_kurt", x: 300, y: 90, hp: 150, isDead: false, isAggressive: false }
-        ];
-
-        var damageTexts = [];
-        var smithTexts = [];
 
         function drawInterface() {
             var ui = document.getElementById('stats-ui');
@@ -63,14 +35,8 @@
             var cost = (pStats.weaponUpgrade + 1) * 800;
             var smithPrompt = "";
             
-            var dX = Math.abs(pPos.x - smithPos.x);
-            var dY = Math.abs(pPos.y - smithPos.y);
-            if (dX < 50 && dY < 50) {
-                if (pStats.weaponUpgrade >= 9) {
-                    smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum!]</b></div>';
-                } else {
-                    smithPrompt = '<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>' + cost + ' Yang</b></div>';
-                }
+            if (Math.abs(pPos.x - smithPos.x) < 50 && Math.abs(pPos.y - smithPos.y) < 50) {
+                smithPrompt = '<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>' + cost + ' Yang</b></div>';
             }
 
             var expPct = (pStats.exp / pStats.maxExp) * 100;
@@ -79,12 +45,10 @@
                 '<div style="font-size:12px; font-weight:bold; color:#ffcc00; margin-bottom:6px; text-align:center;">Yang: ' + pStats.yang.toLocaleString('tr-TR') + '</div>' +
                 '<div class="ui-bar"><div class="hp-fill" style="width: ' + ((pStats.hp / pStats.maxHp) * 100) + '%;">HP: ' + pStats.hp + '/' + pStats.maxHp + '</div></div>' +
                 '<div class="ui-bar"><div class="exp-fill" style="width: ' + expPct + '%;">EXP: %' + expPct.toFixed(0) + '</div></div>' +
-                '<div style="font-size:11px; color:#ccc; text-align:center; margin-top:4px; line-height:13px;"><b>WASD:</b> Yürü | <b>Space:</b> Slot Kes</div>' +
+                '<div style="font-size:11px; color:#ccc; text-align:center; margin-top:4px; line-height:13px;"><b>WASD:</b> Yürü</div>' +
                 smithPrompt;
         }
 
-        // --- KLAVYE AKTİFLEŞTİRME KİLİDİ ---
-        // Tuşların kesin olarak algılanması için event dinleyicileri doğrudan window nesnesine bağlandı
         window.addEventListener('keydown', function(e) {
             var key = e.key.toLowerCase();
             if (activeKeys[key] !== undefined) activeKeys[key] = true;
@@ -95,32 +59,9 @@
                     var cost = (pStats.weaponUpgrade + 1) * 800;
                     if (pStats.yang >= cost) {
                         pStats.yang -= cost; pStats.weaponUpgrade++;
-                        smithTexts.push({ x: smithPos.x, y: smithPos.y - 30, text: "Başarılı! +" + pStats.weaponUpgrade, color: "#00ff00", timer: 40 });
-                    } else {
-                        smithTexts.push({ x: smithPos.x, y: smithPos.y - 30, text: "Yetersiz Yang!", color: "#ff3333", timer: 40 });
                     }
                     drawInterface();
                 }
-            }
-
-            if (e.key === ' ' || e.code === 'Space') {
-                var dmg = 30 + (pStats.weaponUpgrade * 10);
-                mobList.forEach(function(mob) {
-                    if (mob.isDead) return;
-                    if (Math.abs(pPos.x - mob.x) < 50 && Math.abs(pPos.y - mob.y) < 50) {
-                        mob.hp -= dmg; mob.isAggressive = true;
-                        damageTexts.push({ x: mob.x, y: mob.y - 20, text: "-" + dmg, timer: 30 });
-                        if (mob.hp <= 0) {
-                            mob.isDead = true; pStats.exp += 35; pStats.yang += Math.floor(Math.random() * 300) + 150;
-                            if (pStats.exp >= pStats.maxExp) { pStats.level++; pStats.exp = 0; pStats.maxHp += 100; pStats.hp = pStats.maxHp; }
-                            setTimeout(function() {
-                                mob.isDead = false; mob.isAggressive = false; mob.hp = mob.name.includes("Kurt") ? 150 : 90;
-                                mob.x = Math.floor(Math.random() * 450) + 50; mob.y = Math.floor(Math.random() * 320) + 50;
-                            }, 5000);
-                        }
-                    }
-                });
-                drawInterface();
             }
         });
 
@@ -129,51 +70,34 @@
             if (activeKeys[key] !== undefined) activeKeys[key] = false;
         });
 
-        // --- HAREKET VE ÇİZİM MOTORU ---
         function gameLoop() {
             var step = 4;
-            var prevX = pPos.x, prevY = pPos.y;
-            
-            // Klavye komutlarına göre karakter koordinatlarını gerçek zamanlı günceller
             if (activeKeys.w && pPos.y > 25) pPos.y -= step;
             if (activeKeys.s && pPos.y < 425) pPos.y += step;
             if (activeKeys.a && pPos.x > 25) pPos.x -= step;
             if (activeKeys.d && pPos.x < 575) pPos.x += step;
 
-            if (Math.abs(pPos.x - smithPos.x) < 40 && Math.abs(pPos.y - smithPos.y) < 40) { pPos.x = prevX; pPos.y = prevY; }
-
-            // Yapay Zeka Kovalama Döngüsü
-            mobList.forEach(function(mob) {
-                if (mob.isDead || !mob.isAggressive) return;
-                var dX = pPos.x - mob.x;
-                var dY = pPos.y - mob.y;
-                
-                if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
-                    if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
-                    if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
-                    
-                    if (Math.abs(dX) < 25 && Math.abs(dY) < 25 && Math.random() < 0.025) {
-                        pStats.hp -= 8;
-                        if (pStats.hp <= 0) { pStats.hp = pStats.maxHp; pPos = { x: 270, y: 220 }; mobList.forEach(function(m) { m.isAggressive = false; }); }
-                        drawInterface();
-                    }
-                }
-            });
-
-            // Ekranı temizle ve yeniden çiz
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = "#2c421e"; ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 1. DEMİRCİ ÇIZİMİ
-            if (imgs.smith && imgs.smith.complete && imgs.smith.naturalWidth !== 0) {
-                ctx.drawImage(imgs.smith, smithPos.x - 25, smithPos.y - 30, 50, 60);
-            } else {
-                ctx.fillStyle = "#555555"; ctx.fillRect(smithPos.x - 15, smithPos.y - 20, 30, 40);
-            }
-            ctx.fillStyle = "#ffcc00"; ctx.font = "bold 11px Tahoma"; ctx.textAlign = "center";
-            ctx.fillText("[Demirci]", smithPos.x, smithPos.y - 35);
+            // Demirci (Gri Kutu)
+            ctx.fillStyle = "#555555"; ctx.fillRect(smithPos.x - 15, smithPos.y - 20, 30, 40);
+            ctx.fillStyle = "#ffcc00"; ctx.font = "bold 11px Tahoma"; ctx.fillText("[Demirci]", smithPos.x - 22, smithPos.y - 25);
 
-            // 2. CANAVARLAR ÇIZİMİ
-            mobList.forEach(function(mob) {
-                if (mob.isDead) return;
-                var mImg = imgs[mob.type];
+            // Oyuncu (Mavi Kutu)
+            ctx.fillStyle = "#0000ff"; ctx.fillRect(pPos.x - 12, pPos.y - 15, 24, 30);
+            ctx.fillStyle = "#88ccff"; ctx.font = "bold 11px Tahoma"; ctx.fillText("[Savaşçı]", pPos.x - 22, pPos.y - 22);
+
+            // Hareket edildikçe arayüzü yenile
+            if (activeKeys.w || activeKeys.a || activeKeys.s || activeKeys.d) {
+                drawInterface();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        drawInterface();
+        gameLoop();
+    </script>
+</body>
+</html>
