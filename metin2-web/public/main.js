@@ -181,6 +181,8 @@ function onKeyDown(e) {
         var damage = 30 + (pStats.weaponUpgrade * 10);
         mobList.forEach(function(mob) {
             if (mob.isDead || !mob.mesh) return;
+            
+            // Hatalı olan .position.position kısmı düzeltildi
             var dist = playerMesh.position.distanceTo(mob.mesh.position);
             
             if (dist < 4.0) {
