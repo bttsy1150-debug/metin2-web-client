@@ -181,7 +181,7 @@ function onKeyDown(e) {
         var damage = 30 + (pStats.weaponUpgrade * 10);
         mobList.forEach(function(mob) {
             if (mob.isDead || !mob.mesh) return;
-            var dist = playerMesh.position.position.distanceTo(mob.mesh.position);
+            var dist = playerMesh.position.distanceTo(mob.mesh.position);
             
             if (dist < 4.0) {
                 mob.hp -= damage;
