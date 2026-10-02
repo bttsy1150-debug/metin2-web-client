@@ -121,7 +121,14 @@
             window.addEventListener('keyup', onKeyUp);
             window.addEventListener('resize', onWindowResize);
 
+            // Kamera başlangıç pozisyonu
+            camera.position.x = playerMesh.position.x;
+            camera.position.y = playerMesh.position.y + 16;
+            camera.position.z = playerMesh.position.z + 18;
+            camera.lookAt(playerMesh.position);
+
             drawInterface();
+            renderer.render(scene, camera); // İlk kareyi zorunlu olarak çizdiriyoruz
             animate();
         }
 
@@ -199,12 +206,3 @@
                         pStats.yang -= cost;
                         pStats.weaponUpgrade++;
                         if (smithMesh.material) smithMesh.material.color.setHex(0x00ff00);
-                        setTimeout(function() { if (smithMesh && smithMesh.material) smithMesh.material.color.setHex(0x555555); }, 500);
-                    }
-                    drawInterface();
-                }
-            }
-
-            if (e.key === ' ' || e.code === 'Space') {
-                if (!playerMesh) return;
-                var damage = 30 + (pStats.weaponUpgrade * 10);
