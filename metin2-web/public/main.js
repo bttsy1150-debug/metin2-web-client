@@ -2,8 +2,7 @@
 let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
 let pPos = { x: 270, y: 200 }; 
 
-// --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
-// 'cssClass' alanı eklendi, böylece canavarlar doğrudan yüklediğin görselleri alacak.
+// --- 5 ADET CANAVAR LİSTESİ ---
 let mobList = [
     { id: 1, name: "Yabani Köpek", cssClass: "mob-yabani-kopek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
     { id: 2, name: "Yabani Köpek", cssClass: "mob-yabani-kopek", x: 480, y: 170, hp: 90, isDead: false, isAggressive: false }, 
@@ -65,11 +64,9 @@ function renderMonsters() {
         }
         if (!mEl) {
             mEl = document.createElement('div');
-            // Elementin hem genel render sınıfını hem de görsele özel CSS sınıfını ekliyoruz
             mEl.className = 'render-object enemy-monster ' + mob.cssClass;
             mEl.id = 'mob-' + mob.id;
             
-            // Metin2 usulü isim etiketini ekliyoruz
             let nTag = document.createElement('div');
             nTag.className = 'name-tag';
             nTag.innerText = '[' + mob.name + ']';
@@ -157,7 +154,6 @@ window.addEventListener('keydown', function(e) {
             if (dX < 60 && dY < 60) {
                 mob.hp -= playerDamage; mob.isAggressive = true; spawnDamageText(mob.x, mob.y, playerDamage);
                 
-                // Vurulma durumunda canavarların kırmızılaşması flaş efekti
                 const mEl = document.getElementById('mob-' + mob.id);
                 if (mEl) {
                     mEl.style.filter = 'brightness(1.8) sepia(1) hue-rotate(-50deg)';
@@ -218,3 +214,12 @@ function runEngine() {
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
             if (Math.abs(pPos.x - mob.x) < 25 && Math.abs(pPos.y - mob.y) < 25) {
                 if (Math.random() < 0.025) {
+                    pStats.hp -= 8;
+                    if (pStats.hp <= 0) { pStats.hp = pStats.maxHp; pPos = { x: 270, y: 200 }; mobList.forEach(function(m) { m.isAggressive = false; }); }
+                    drawInterface();
+                }
+            }
+        }
+    });
+
+    renderPlayer(); renderMonsters();
