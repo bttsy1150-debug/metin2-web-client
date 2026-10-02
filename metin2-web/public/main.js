@@ -1,13 +1,10 @@
 // --- OYUN AYARLARI VE GLOBAL DEĞİŞKENLER ---
 var pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
-var pPos = { x: 270, y: 200 }; 
 
-// Sahne Bileşenleri
 var scene, camera, renderer;
 var playerMesh, smithMesh;
 var activeKeys = { w: false, a: false, s: false, d: false };
 
-// 3D Canavar Listesi
 var mobList = [
     { id: 1, name: "Yabani Köpek", x: -15, z: -15, hp: 90, isDead: false, isAggressive: false, mesh: null },
     { id: 2, name: "Yabani Köpek", x: 15, z: -10, hp: 90, isDead: false, isAggressive: false, mesh: null },
@@ -17,6 +14,8 @@ var mobList = [
 ];
 
 var smithPos = { x: 18, z: -15 };
+var droppedYangList = [];
+var yangIdCounter = 0;
 
 function spawnDamageText(x, y, amount) {
     var container = document.getElementById('threejs-canvas-container');
@@ -182,7 +181,7 @@ function onKeyDown(e) {
         var damage = 30 + (pStats.weaponUpgrade * 10);
         mobList.forEach(function(mob) {
             if (mob.isDead || !mob.mesh) return;
-            var dist = playerMesh.position.distanceTo(mob.mesh.position);
+            var dist = playerMesh.position.position.distanceTo(mob.mesh.position);
             
             if (dist < 4.0) {
                 mob.hp -= damage;
@@ -250,5 +249,4 @@ function drawInterface() {
 
     var expPct = (pStats.exp / pStats.maxExp) * 100;
     
-    // Uyumsuzluk yaratabilecek tırnak işaretleri tamamen düz metin birleştirmeye çevrildi
     ui.innerHTML = '<div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:2px; text-align:center;">Metin2 Web 3D [Lv. ' + pStats.level + ']</div>' +
