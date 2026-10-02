@@ -14,19 +14,29 @@ let mobList = [
 const container = document.getElementById('game-container');
 const playerEl = document.getElementById('hero-player');
 
-// Canavarları ekrana görsel olarak basan fonksiyon
+// Optimize edilmiş canavar çizim fonksiyonu (Sadece konumu günceller)
 function renderMonsters() {
-    document.querySelectorAll('.enemy-monster').forEach(el => el.remove());
-
     mobList.forEach(mob => {
-        if (mob.isDead) return;
-        const mEl = document.createElement('div');
-        mEl.className = 'render-object enemy-monster';
-        mEl.id = `mob-${mob.id}`;
-        mEl.innerText = `[${mob.name}]`;
+        let mEl = document.getElementById(`mob-${mob.id}`);
+
+        // Canavar öldüyse ve ekranda elemanı varsa kaldır
+        if (mob.isDead) {
+            if (mEl) mEl.remove();
+            return;
+        }
+
+        // Element yoksa bir kez oluştur
+        if (!mEl) {
+            mEl = document.createElement('div');
+            mEl.className = 'render-object enemy-monster';
+            mEl.id = `mob-${mob.id}`;
+            mEl.innerText = `[${mob.name}]`;
+            container.appendChild(mEl);
+        }
+
+        // Sadece koordinatları güncelle (Performans için kritik)
         mEl.style.left = mob.x + 'px';
         mEl.style.top = mob.y + 'px';
-        container.appendChild(mEl);
     });
 }
 
@@ -68,37 +78,43 @@ window.addEventListener('keydown', (e) => {
             let dY = Math.abs(pPos.y - mob.y);
 
             // Saldırı mesafesi kontrolü
-            if (dX < 50 && dY < 50) {
+            if (dX < 60 && dY < 60) {
                 mob.hp -= 30;
                 
-                // Vurulma efekti
+                // Vurulma efekti (Beyaz flaş)
                 const mEl = document.getElementById(`mob-${mob.id}`);
                 if (mEl) {
                     mEl.style.backgroundColor = '#ffffff';
-                    setTimeout(() => { if (mEl) mEl.style.backgroundColor = '#8b0000'; }, 80);
+                    setTimeout(() => { 
+                        let currentEl = document.getElementById(`mob-${mob.id}`);
+                        if (currentEl) currentEl.style.backgroundColor = '#8b0000'; 
+                    }, 80);
                 }
 
                 if (mob.hp <= 0) {
                     mob.isDead = true;
                     pStats.exp += 35;
                     if (pStats.exp >= pStats.maxExp) {
-                        pStats.level++; pStats.exp = 0; pStats.maxHp += 100; pStats.hp = pStats.maxHp;
+                        pStats.level++; 
+                        pStats.exp = 0; 
+                        pStats.maxHp += 100; 
+                        pStats.hp = pStats.maxHp;
                     }
-                    renderMonsters();
                 }
             }
         });
         drawInterface();
+        renderMonsters();
     }
 });
 
 // Kesintisiz Oyun Motoru Döngüsü
 function runEngine() {
     const moveStep = 4;
-    if (activeKeys.w && pPos.y > 5) pPos.y -= moveStep;
-    if (activeKeys.s && pPos.y < 410) pPos.y += moveStep;
-    if (activeKeys.a && pPos.x > 5) pPos.x -= moveStep;
-    if (activeKeys.d && pPos.x < 510) pPos.x += moveStep;
+    if (activeKeys.w && pPos.y > 15) pPos.y -= moveStep;
+    if (activeKeys.s && pPos.y < 435) pPos.y += moveStep;
+    if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
+    if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
     // Canavar Yapay Zekası: Slotlar oyuncuya doğru adım adım ilerler
     mobList.forEach(mob => {
@@ -107,18 +123,19 @@ function runEngine() {
         let dX = pPos.x - mob.x;
         let dY = pPos.y - mob.y;
 
-        if (Math.abs(dX) < 160 && Math.abs(dY) < 160) {
+        if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
             if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
             
             // Oyuncuya çok yaklaştıklarında hasar vururlar
-            if (Math.abs(dX) < 22 && Math.abs(dY) < 22) {
+            if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
                 if (Math.random() < 0.025) {
                     pStats.hp -= 8;
                     if (pStats.hp <= 0) {
                         pStats.hp = pStats.maxHp;
                         pPos = { x: 270, y: 200 }; // Ölen oyuncu merkezde doğar
                     }
+                    drawInterface();
                 }
             }
         }
