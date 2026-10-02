@@ -1,12 +1,13 @@
 // --- OYUN AYARLARI VE GLOBAL DEĞİŞKENLER ---
 var pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100, yang: 5000, weaponUpgrade: 0 };
+var pPos = { x: 270, y: 200 }; 
 
-// 3D Sahne Bileşenleri
+// Sahne Bileşenleri
 var scene, camera, renderer;
 var playerMesh, smithMesh;
 var activeKeys = { w: false, a: false, s: false, d: false };
 
-// 3D Canavar Listesi (X, Z koordinatları 3D uzaya uyarlandı)
+// 3D Canavar Listesi
 var mobList = [
     { id: 1, name: "Yabani Köpek", x: -15, z: -15, hp: 90, isDead: false, isAggressive: false, mesh: null },
     { id: 2, name: "Yabani Köpek", x: 15, z: -10, hp: 90, isDead: false, isAggressive: false, mesh: null },
@@ -15,83 +16,92 @@ var mobList = [
     { id: 5, name: "Aç Kurt", x: 0, z: -18, hp: 150, isDead: false, isAggressive: false, mesh: null }
 ];
 
-var smithPos = { x: 18, z: -15 }; // Demirci 3D konumu
+var smithPos = { x: 18, z: -15 };
 
-// --- THREE.JS BAŞLATIPI SAHNEYİ KURMA ---
-function init3D() {
-    try {
-        var container = document.getElementById('threejs-canvas-container');
-        if (!container) return;
-
-        // 1. Sahne (Scene)
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a2414); // Metin2 Koyu Yeşil Atmosfer Rengi
-
-        // 2. Kamera (Perspective Camera) - Metin2 Kuş Bakışı Görüş Açısı
-        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
-        
-        // 3. Renderer (WebGL Motoru)
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        container.appendChild(renderer.domElement);
-
-        // 4. Işıklandırma (Ortam ve Güneş Işığı)
-        var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        var directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
-        directionalLight.position.set(10, 20, 15);
-        scene.add(directionalLight);
-
-        // 5. 3D Zemin (Harita)
-        var floorGeo = new THREE.PlaneGeometry(60, 60);
-        var floorMat = new THREE.MeshStandardMaterial({ color: 0x2c421e, roughness: 0.8 });
-        var floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2; // Zemini yatay pozisyona getiriyoruz
-        scene.add(floor);
-
-        // 6. Oyuncu Savaşçı Modeli (Mavi 3D Kutu)
-        var playerGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
-        var playerMat = new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5 });
-        playerMesh = new THREE.Mesh(playerGeo, playerMat);
-        playerMesh.position.set(0, 1, 0); // Ayakları zemine bassın
-        scene.add(playerMesh);
-
-        // 7. Demirci NPC Modeli (Gri 3D Kutu)
-        var smithGeo = new THREE.BoxGeometry(2, 2.5, 2);
-        var smithMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5 });
-        smithMesh = new THREE.Mesh(smithGeo, smithMat);
-        smithMesh.position.set(smithPos.x, 1.25, smithPos.z);
-        scene.add(smithMesh);
-
-        // 8. Canavarları Sahneye Ekleme Döngüsü (Kırmızı 3D Kutular)
-        mobList.forEach(function(mob) {
-            var mobGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-            var mobMat = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.5 });
-            var mMesh = new THREE.Mesh(mobGeo, mobMat);
-            mMesh.position.set(mob.x, 0.75, mob.z);
-            scene.add(mMesh);
-            mob.mesh = mMesh; // JavaScript referansını bağlıyoruz
-        });
-
-        // Klavye Eventleri Bağlantısı
-        window.addEventListener('keydown', onKeyDown);
-        window.addEventListener('keyup', onKeyUp);
-        window.addEventListener('resize', onWindowResize);
-
-        drawInterface();
-        animate();
-    } catch(err) {
-        console.error("3D Baslatma Hatasi:", err);
-    }
+function spawnDamageText(x, y, amount) {
+    var container = document.getElementById('threejs-canvas-container');
+    if (!container) return;
+    var damageEl = document.createElement('div');
+    damageEl.className = 'damage-indicator';
+    damageEl.innerText = '-' + amount;
+    damageEl.style.left = '50%';
+    damageEl.style.top = '40%';
+    container.appendChild(damageEl);
+    setTimeout(function() { damageEl.remove(); }, 600);
 }
 
-// --- OYUN MOTORU VE ANIMASYON DÖNGÜSÜ ---
+function spawnSmithText(x, y, text, isSuccess) {
+    var container = document.getElementById('threejs-canvas-container');
+    if (!container) return;
+    var textEl = document.createElement('div');
+    textEl.className = 'blacksmith-text';
+    textEl.innerText = text;
+    textEl.style.color = isSuccess ? '#00ff00' : '#ff3333';
+    textEl.style.left = '50%';
+    textEl.style.top = '35%';
+    container.appendChild(textEl);
+    setTimeout(function() { textEl.remove(); }, 800);
+}
+
+function init3D() {
+    var container = document.getElementById('threejs-canvas-container');
+    if (!container) return;
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a2414);
+
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+    
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    directionalLight.position.set(10, 20, 15);
+    scene.add(directionalLight);
+
+    var floorGeo = new THREE.PlaneGeometry(60, 60);
+    var floorMat = new THREE.MeshStandardMaterial({ color: 0x2c421e, roughness: 0.8 });
+    var floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    var playerGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
+    var playerMat = new THREE.MeshStandardMaterial({ color: 0x0000ff, roughness: 0.5 });
+    playerMesh = new THREE.Mesh(playerGeo, playerMat);
+    playerMesh.position.set(0, 1, 0);
+    scene.add(playerMesh);
+
+    var smithGeo = new THREE.BoxGeometry(2, 2.5, 2);
+    var smithMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.5 });
+    smithMesh = new THREE.Mesh(smithGeo, smithMat);
+    smithMesh.position.set(smithPos.x, 1.25, smithPos.z);
+    scene.add(smithMesh);
+
+    mobList.forEach(function(mob) {
+        var mobGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        var mobMat = new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.5 });
+        var mMesh = new THREE.Mesh(mobGeo, mobMat);
+        mMesh.position.set(mob.x, 0.75, mob.z);
+        scene.add(mMesh);
+        mob.mesh = mMesh;
+    });
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('resize', onWindowResize);
+
+    drawInterface();
+    animate();
+}
+
 function animate() {
     requestAnimationFrame(animate);
 
     if (!playerMesh || !scene || !camera || !renderer) return;
 
-    // 1. WASD ile 3D Hareket Kontrolü
     var moveSpeed = 0.15;
     var prevX = playerMesh.position.x;
     var prevZ = playerMesh.position.z;
@@ -101,11 +111,9 @@ function animate() {
     if (activeKeys.a) playerMesh.position.x -= moveSpeed;
     if (activeKeys.d) playerMesh.position.x += moveSpeed;
 
-    // Harita Sınır Kontrolü (-28, +28 arası)
     if (playerMesh.position.x < -28 || playerMesh.position.x > 28) playerMesh.position.x = prevX;
     if (playerMesh.position.z < -28 || playerMesh.position.z > 28) playerMesh.position.z = prevZ;
 
-    // Demirci Katı Cisim Çarpışma Testi (Fizik)
     if (smithMesh) {
         var distToSmith = playerMesh.position.distanceTo(smithMesh.position);
         if (distToSmith < 2.2) {
@@ -114,28 +122,24 @@ function animate() {
         }
     }
 
-    // 2. Canavar Yapay Zekası ve Takip Algoritması
     mobList.forEach(function(mob) {
         if (!mob.mesh || mob.isDead || !mob.isAggressive) return;
 
         var dist = mob.mesh.position.distanceTo(playerMesh.position);
         
-        // Slot yakınsa oyuncuya doğru yürür
         if (dist < 15) {
             var dirX = playerMesh.position.x - mob.mesh.position.x;
             var dirZ = playerMesh.position.z - mob.mesh.position.z;
             
-            // Normalize etme ve yürüme ivmesi
             mob.mesh.position.x += (dirX / dist) * 0.05;
             mob.mesh.position.z += (dirZ / dist) * 0.05;
 
-            // Vuruş Menzili Kontrolü
             if (dist < 1.8) {
                 if (Math.random() < 0.02) {
                     pStats.hp -= 8;
                     if (pStats.hp <= 0) {
                         pStats.hp = pStats.maxHp;
-                        playerMesh.position.set(0, 1, 0); // Ölen oyuncu başlangıç noktasında doğar
+                        playerMesh.position.set(0, 1, 0);
                         mobList.forEach(function(m) { m.isAggressive = false; });
                     }
                     drawInterface();
@@ -144,24 +148,20 @@ function animate() {
         }
     });
 
-    // 3. Metin2 TPS Kamera Takip Sistemi (Oyuncunun arkasından yukarı bakış)
     camera.position.x = playerMesh.position.x;
-    camera.position.y = playerMesh.position.y + 16; // Kamera yüksekliği
-    camera.position.z = playerMesh.position.z + 18; // Kamera arkaya kayma mesafesi
-    camera.lookAt(playerMesh.position); // Kamera sürekli oyuncuya odaklanır
+    camera.position.y = playerMesh.position.y + 16;
+    camera.position.z = playerMesh.position.z + 18;
+    camera.lookAt(playerMesh.position);
 
-    // Realtime Render
     renderer.render(scene, camera);
 }
 
-// --- INTERACTION & EVENT LISTENERS ---
 function onKeyDown(e) {
     var key = e.key.toLowerCase();
     if (activeKeys[key] !== undefined) activeKeys[key] = true;
     if (key === 'w' || key === 'a' || key === 's' || key === 'd') drawInterface();
 
-    // DEMİRCİ ETKİLEŞİMİ (E TUŞU)
-    if (e.key === 'e' || e.key === 'E') {
+    if (key === 'e') {
         if (!playerMesh || !smithMesh) return;
         var dist = playerMesh.position.distanceTo(smithMesh.position);
         if (dist < 4.0) {
@@ -177,7 +177,6 @@ function onKeyDown(e) {
         }
     }
 
-    // SPACE TUŞU İLE SALDIRI
     if (e.key === ' ' || e.code === 'Space') {
         if (!playerMesh) return;
         var damage = 30 + (pStats.weaponUpgrade * 10);
@@ -242,3 +241,14 @@ function drawInterface() {
         var dist = playerMesh.position.distanceTo(smithMesh.position);
         if (dist < 4.0) {
             if (pStats.weaponUpgrade >= 9) {
+                smithPrompt = '<div style="color:#00ff00; font-size:11px; margin-top:4px; text-align:center;"><b>[Silah Maksimum Seviyede!]</b></div>';
+            } else {
+                smithPrompt = '<div style="color:#ffdd00; font-size:11px; margin-top:4px; text-align:center;"><b>Demirciye Yakınsın!</b><br>Kılıcı Yükseltmek İçin <b>"E"</b> bas.<br>Maliyet: <b>' + cost + ' Yang</b></div>';
+            }
+        }
+    }
+
+    var expPct = (pStats.exp / pStats.maxExp) * 100;
+    
+    // Uyumsuzluk yaratabilecek tırnak işaretleri tamamen düz metin birleştirmeye çevrildi
+    ui.innerHTML = '<div style="font-size:14px; font-weight:bold; color:#ffdd00; margin-bottom:2px; text-align:center;">Metin2 Web 3D [Lv. ' + pStats.level + ']</div>' +
