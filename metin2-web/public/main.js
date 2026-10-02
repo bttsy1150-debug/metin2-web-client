@@ -3,29 +3,28 @@ let pStats = { level: 3, hp: 940, maxHp: 1000, exp: 40, maxExp: 100 };
 let pPos = { x: 270, y: 200 }; // Haritanın tam merkezi
 
 // --- 5 ADET HAREKETLİ CANAVAR LİSTESİ ---
+// Her canavara ilk başta saldırmaması için 'isAggressive: false' eklendi.
 let mobList = [
-    { id: 1, name: "Yabani Köpek", x: 60, y: 60, hp: 90, isDead: false },
-    { id: 2, name: "Yabani Köpek", x: 480, y: 70, hp: 90, isDead: false },
-    { id: 3, name: "Aç Yabani Köpek", x: 120, y: 320, hp: 120, isDead: false },
-    { id: 4, name: "Kurt", x: 450, y: 300, hp: 150, isDead: false },
-    { id: 5, name: "Aç Kurt", x: 320, y: 80, hp: 150, isDead: false }
+    { id: 1, name: "Yabani Köpek", x: 60, y: 60, hp: 90, isDead: false, isAggressive: false },
+    { id: 2, name: "Yabani Köpek", x: 480, y: 70, hp: 90, isDead: false, isAggressive: false },
+    { id: 3, name: "Aç Yabani Köpek", x: 120, y: 320, hp: 120, isDead: false, isAggressive: false },
+    { id: 4, name: "Kurt", x: 450, y: 300, hp: 150, isDead: false, isAggressive: false },
+    { id: 5, name: "Aç Kurt", x: 320, y: 80, hp: 150, isDead: false, isAggressive: false }
 ];
 
 const container = document.getElementById('game-container');
 const playerEl = document.getElementById('hero-player');
 
-// Optimize edilmiş canavar çizim fonksiyonu (Sadece konumu günceller)
+// Canavarları ekrana görsel olarak basan ve konumlarını güncelleyen fonksiyon
 function renderMonsters() {
     mobList.forEach(mob => {
         let mEl = document.getElementById(`mob-${mob.id}`);
 
-        // Canavar öldüyse ve ekranda elemanı varsa kaldır
         if (mob.isDead) {
             if (mEl) mEl.remove();
             return;
         }
 
-        // Element yoksa bir kez oluştur
         if (!mEl) {
             mEl = document.createElement('div');
             mEl.className = 'render-object enemy-monster';
@@ -34,7 +33,6 @@ function renderMonsters() {
             container.appendChild(mEl);
         }
 
-        // Sadece koordinatları güncelle (Performans için kritik)
         mEl.style.left = mob.x + 'px';
         mEl.style.top = mob.y + 'px';
     });
@@ -80,8 +78,9 @@ window.addEventListener('keydown', (e) => {
             // Saldırı mesafesi kontrolü
             if (dX < 60 && dY < 60) {
                 mob.hp -= 30;
+                mob.isAggressive = true; // Oyuncu canavara vurduğu için canavar artık AGRESİF oldu!
                 
-                // Vurulma efekti (Beyaz flaş)
+                // Vurulma efekti
                 const mEl = document.getElementById(`mob-${mob.id}`);
                 if (mEl) {
                     mEl.style.backgroundColor = '#ffffff';
@@ -91,15 +90,35 @@ window.addEventListener('keydown', (e) => {
                     }, 80);
                 }
 
+                // Ölüm Kontrolü ve Yeniden Doğma (Respawn) Sistemi
                 if (mob.hp <= 0) {
                     mob.isDead = true;
                     pStats.exp += 35;
+                    
                     if (pStats.exp >= pStats.maxExp) {
                         pStats.level++; 
                         pStats.exp = 0; 
                         pStats.maxHp += 100; 
                         pStats.hp = pStats.maxHp;
                     }
+
+                    // 5 Saniye sonra canavarı rastgele konumda ve pasif (sakin) olarak dirilt
+                    setTimeout(() => {
+                        mob.x = Math.floor(Math.random() * (570 - 30 + 1)) + 30;
+                        mob.y = Math.floor(Math.random() * (420 - 30 + 1)) + 30;
+                        
+                        if (mob.name.includes("Aç Kurt") || mob.name === "Kurt") {
+                            mob.hp = 150;
+                        } else if (mob.name.includes("Aç Yabani Köpek")) {
+                            mob.hp = 120;
+                        } else {
+                            mob.hp = 90;
+                        }
+                        
+                        mob.isDead = false;
+                        mob.isAggressive = false; // Yeniden doğan canavar ilk başta yine sakin doğar
+                        renderMonsters();
+                    }, 5000);
                 }
             }
         });
@@ -116,24 +135,31 @@ function runEngine() {
     if (activeKeys.a && pPos.x > 15) pPos.x -= moveStep;
     if (activeKeys.d && pPos.x < 585) pPos.x += moveStep;
 
-    // Canavar Yapay Zekası: Slotlar oyuncuya doğru adım adım ilerler
+    // Canavar Yapay Zekası
     mobList.forEach(mob => {
         if (mob.isDead) return;
+
+        // EĞER OYUNCU VURMADIYSA canavar tamamen hareketsiz kalır ve saldırmaz
+        if (!mob.isAggressive) return;
 
         let dX = pPos.x - mob.x;
         let dY = pPos.y - mob.y;
 
+        // Canavar agresifse oyuncuyu kovalamaya başlar
         if (Math.abs(dX) < 200 && Math.abs(dY) < 200) {
             if (mob.x < pPos.x) mob.x += 1.2; else mob.x -= 1.2;
             if (mob.y < pPos.y) mob.y += 1.2; else mob.y -= 1.2;
             
-            // Oyuncuya çok yaklaştıklarında hasar vururlar
+            // Oyuncuya hasar vurma mekaniği
             if (Math.abs(dX) < 25 && Math.abs(dY) < 25) {
                 if (Math.random() < 0.025) {
                     pStats.hp -= 8;
                     if (pStats.hp <= 0) {
                         pStats.hp = pStats.maxHp;
                         pPos = { x: 270, y: 200 }; // Ölen oyuncu merkezde doğar
+                        
+                        // Oyuncu öldüğü için tüm canavarların agresifliği sıfırlanır (sakinleşirler)
+                        mobList.forEach(m => m.isAggressive = false);
                     }
                     drawInterface();
                 }
